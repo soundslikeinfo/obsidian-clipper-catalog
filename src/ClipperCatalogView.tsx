@@ -26,7 +26,7 @@ export class ClipperCatalogView extends ItemView {
   }
 
   getDisplayText() {
-    return "Clipper Catalog";
+    return "Clipper catalog";
   }
 
   async onOpen() {

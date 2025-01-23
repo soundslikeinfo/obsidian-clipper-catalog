@@ -319,7 +319,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           className="cc-flex cc-items-center cc-gap-1 cc-text-sm cc-font-medium hover:cc-underline cc-text-muted cc-transition-all"
         >
           {advancedSettings.isExpanded ? <ChevronDown className="cc-h-4 cc-w-4" /> : <ChevronRight className="cc-h-4 cc-w-4" />}
-          Advanced Search Options
+          Advanced search options
         </button>
         {!advancedSettings.isExpanded && excludedCount > 0 && (
           <em className="cc-text-xs cc-text-muted">
@@ -396,7 +396,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     onClick={handleClearAllDirectories}
                     className="cc-px-3 cc-py-1 cc-text-xs cc-rounded cc-bg-accent-primary cc-text-on-accent cc-font-medium clipper-catalog-button hover:cc-opacity-90"
                   >
-                    Clear All Excluded Paths
+                    Clear all excluded paths
                   </button>
                 </div>
                 <div className="cc-flex cc-flex-wrap cc-gap-1.5">
