@@ -108,36 +108,37 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
             continue;
           }
 
-          const content = await app.vault.read(file);
-          const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          // Use MetadataCache API to get file metadata
+          const metadata = app.metadataCache.getFileCache(file);
           
-          if (frontmatterMatch) {
-            const frontmatter = frontmatterMatch[1];            
-            const sourcePropertyPattern = `^${plugin.settings.sourcePropertyName}:\\s*["']?([^"'\\s]+)["']?\\s*$`
-            const sourcePropertyRegex = new RegExp(sourcePropertyPattern, 'm')
-            const sourceMatch = frontmatter.match(sourcePropertyRegex);
-
-            if (sourceMatch) {
+          if (metadata?.frontmatter) {
+            const source = metadata.frontmatter[plugin.settings.sourcePropertyName];
+            
+            if (source) {
+              // Get file content only if we need it
               const content = await app.vault.read(file);
-              const title = file.basename;
-
+              
+              // Get tags from metadata cache instead of parsing content
               let tags: string[] = [];
               
-              // Get all hashtags from the entire content (including frontmatter)
-              const hashtagMatches = content.match(/#[\w\d-_/]+/g) || [];
-
-
-              // Add content tags (requiring # prefix)
-              tags = [...new Set(hashtagMatches.map(tag => tag.slice(1)))].filter(Boolean);
-
-
-
-              // Remove duplicates using Set
-              tags = [...new Set(tags)].filter(Boolean);
+              // Combine frontmatter tags and inline tags
+              if (metadata.tags) {
+                tags = metadata.tags.map(tag => 
+                  typeof tag === 'string' ? tag : tag.tag
+                );
+              }
+              
+              // Add any additional inline tags not in frontmatter
+              const inlineTags = metadata.tags?.map(tag => 
+                typeof tag === 'string' ? tag : tag.tag
+              ) || [];
+              
+              // Combine and remove duplicates
+              tags = [...new Set([...tags, ...inlineTags])];
 
               articleFiles.push({
-                title,
-                url: sourceMatch[1],
+                title: file.basename,
+                url: source,
                 path: file.path,
                 date: file.stat.ctime,
                 tags,
@@ -158,7 +159,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [app.vault, advancedSettings.ignoredDirectories]);
+  }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories]);
 
 
   // Initial load
