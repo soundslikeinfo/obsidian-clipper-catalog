@@ -34,7 +34,7 @@ export default class ObsidianClipperCatalog extends Plugin {
     );
   
     // Add ribbon icon
-    this.addRibbonIcon(ICON_NAME, 'Clipper Catalog', (evt: MouseEvent) => {
+    this.addRibbonIcon(ICON_NAME, 'Show all clippings', (evt: MouseEvent) => {
       // Get active leaf or create new one in center
       const leaf = this.app.workspace.getLeaf('tab');
       if (leaf) {
@@ -49,7 +49,7 @@ export default class ObsidianClipperCatalog extends Plugin {
 
     this.addCommand({
       id: 'show-all-clippings',
-      name: 'Show All Clippings',
+      name: 'Show all clippings',
       callback: () => {
         // Get active leaf or create new one in center
         const leaf = this.app.workspace.getLeaf('tab');
@@ -109,7 +109,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
     });
 
     new Setting(containerEl)
-    .setName('Property Name')
+    .setName('Property name')
     .setDesc('Specify which frontmatter property contains your clipped URLs (e.g., "source", "url", "link").')
     .addText(text => text
       .setValue(this.plugin.settings.sourcePropertyName)
