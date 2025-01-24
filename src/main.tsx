@@ -77,8 +77,6 @@ export default class ObsidianClipperCatalog extends Plugin {
 
 class ClipperCatalogSettingTab extends PluginSettingTab {
   plugin: ObsidianClipperCatalog;
-  settingsHeaderEl: HTMLDivElement;
-  settingsHeaderContentEl: HTMLDivElement;
   advancedSettingsEl: HTMLDetailsElement;
   advancedContentEl: HTMLDivElement;
 
@@ -92,21 +90,6 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
     containerEl.empty();
     containerEl.addClass('clipper-catalog-plugin');
     containerEl.addClass('clipper-catalog-settings');
-
-    // Create Header section using <div> element
-    this.settingsHeaderEl = containerEl.createEl('div', {
-      cls: 'settings-title',
-    });
-    
-    const settingsHeader = this.settingsHeaderEl.createEl('div', {
-        cls: 'settings-clipper-catalog-name',
-        text: 'Clipper Catalog Settings'
-    });
-
-    // Create a container for advanced settings content
-    this.settingsHeaderContentEl = this.settingsHeaderEl.createEl('div', {
-      cls: 'advanced-settings-name'
-    });
 
     new Setting(containerEl)
     .setName('Property Name')
