@@ -511,10 +511,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     {article.tags.map((tag, i) => (
                       <span 
                         key={i}
-                        onClick={() => setSearchTerm(`#${tag}`)}
+                        onClick={() => setSearchTerm(tag.startsWith('#') ? tag : `#${tag}`)}
                         className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-tag"
                       >
-                        #{tag}
+                        {tag}
                       </span>
                     ))}
                   </div>
