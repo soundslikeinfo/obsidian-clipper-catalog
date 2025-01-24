@@ -1,4 +1,3 @@
-/* Remove @tailwind base to prevent global style reset */
 @tailwind components;
 @tailwind utilities;
 
