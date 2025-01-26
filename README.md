@@ -4,13 +4,13 @@ A catalog view that provides a powerful interface for all your clipped web artic
 
 ## Features
 
-🔍 Catalog all your clipped articles in one view
-📱 Fully responsive design that works on desktop and mobile
-🏷️ Tag-based organization and filtering
-🔄 Real-time search and sorting capabilities
-⚡ Command palette integration
-🎨 Clean, modern UI with theme integration
-📂 Advanced directory filtering options
+🔍 Catalog all your clipped articles in one view  
+📱 Works on desktop and mobile  
+🏷️ Tag-based organization and filtering  
+🔄 Real-time search and sorting capabilities  
+⚡ Command palette integration  
+🎨 Clean, modern UI with theme integration  
+📂 Advanced directory filtering options  
 
 ## Installation
 
