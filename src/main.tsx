@@ -7,6 +7,7 @@ interface ObsidianClipperCatalogSettings {
   sourcePropertyName: string;
   ignoredDirectories: string[];
   isAdvancedSettingsExpanded: boolean;
+  includeFrontmatterTags: boolean;
 }
 
 // Add this before the ObsidianClipperCatalog class definition
@@ -15,7 +16,8 @@ export const ICON_NAME = 'clipper-catalog';
 const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   sourcePropertyName: 'source',
   ignoredDirectories: [],
-  isAdvancedSettingsExpanded: false
+  isAdvancedSettingsExpanded: false,
+  includeFrontmatterTags: true
 }
 
 export default class ObsidianClipperCatalog extends Plugin {
@@ -102,6 +104,16 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.sourcePropertyName)
       .onChange(async (value) => {
         this.plugin.settings.sourcePropertyName = value;
+        await this.plugin.saveSettings();
+      }));
+    
+    new Setting(containerEl)
+    .setName('Include frontmatter tags')
+    .setDesc('Include tags from the frontmatter "tags" field')
+    .addToggle(toggle => toggle
+      .setValue(this.plugin.settings.includeFrontmatterTags)
+      .onChange(async (value) => {
+        this.plugin.settings.includeFrontmatterTags = value;
         await this.plugin.saveSettings();
       }));
   }

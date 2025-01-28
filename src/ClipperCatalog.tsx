@@ -128,13 +128,39 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               }
               
               // Add any additional inline tags not in frontmatter
-              const inlineTags = metadata.tags?.map(tag => 
-                typeof tag === 'string' ? tag : tag.tag
-              ) || [];
+              // const inlineTags = metadata.tags?.map(tag => 
+              //   typeof tag === 'string' ? tag : tag.tag
+              // ) || [];
               
               // Combine and remove duplicates
-              tags = [...new Set([...tags, ...inlineTags])];
+              // tags = [...new Set([...tags, ...inlineTags])];
 
+              // Add frontmatter tags if the setting is enabled
+              if (plugin.settings.includeFrontmatterTags && metadata.frontmatter.tags) {
+                let frontmatterTags: string[] = [];
+                
+                // Handle different formats of frontmatter tags
+                if (Array.isArray(metadata.frontmatter.tags)) {
+                  frontmatterTags = metadata.frontmatter.tags;
+                } else if (typeof metadata.frontmatter.tags === 'string') {
+                  // Handle comma-separated tags
+                  frontmatterTags = metadata.frontmatter.tags
+                    .split(',')
+                    .map(tag => tag.trim());
+                }
+
+                // Clean up tags (remove # if present) and add to tags array
+                frontmatterTags.forEach(tag => {
+                  const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                  if (!tags.includes(cleanTag)) {
+                    tags.push(cleanTag);
+                  }
+                });
+              }
+
+              // Remove duplicates and empty tags
+              tags = [...new Set(tags)].filter(Boolean);
+              
               articleFiles.push({
                 title: file.basename,
                 url: source,
@@ -158,7 +184,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories]);
+  }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories, plugin.settings]);
 
 
   // Initial load
