@@ -120,6 +120,10 @@
   animation: cc-spin 1s linear infinite;
 }
 
+.cc-cursor-help {
+  cursor: help;
+}
+
 .cc-cursor-pointer {
   cursor: pointer;
 }
@@ -568,8 +572,60 @@
   transition: opacity 0.2s ease;
 }
 
-.clipper-catalog-tag:hover {
+.clipper-catalog-frontmatter-tag {
+  background-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+  color: var(--text-normal);
+  border: 1px solid var(--interactive-accent);
+  transition: opacity 0.2s ease;
+}
+
+.clipper-catalog-tag:hover,
+.clipper-catalog-frontmatter-tag:hover {
   opacity: 0.8;
+}
+
+.clipper-catalog-tag-icon {
+  position: relative;
+  top: 1px;
+  /* Fine-tune this value as needed */
+  color: var(--text-muted);
+}
+
+/* Tooltip styles */
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:hover::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 8px;
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  border-radius: 3px;
+  margin-bottom: 6px;
+  z-index: 1000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  opacity: 0.9;
+}
+
+.clipper-catalog-tag-icon {
+  position: relative;
+  top: 1px;
+  color: var(--text-muted);
+  cursor: help;
+}
+
+/* Ensure tooltip appears above other content */
+
+.cc-z-50 {
+  z-index: 50;
 }
 
 /* Link styles */

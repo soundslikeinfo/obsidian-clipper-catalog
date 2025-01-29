@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, Tag } from 'lucide-react';
 import { TFile, App } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
 
@@ -14,6 +14,8 @@ interface Article {
   path: string;
   date: number;
   tags: string[];
+  frontmatterTags: string[];
+  contentTags: string[];
   basename: string;
   content: string;
 }
@@ -100,47 +102,61 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     try {
       const articleFiles: Article[] = [];
       const files = app.vault.getMarkdownFiles();
-
+  
       for (const file of files) {
         try {
           if (isPathIgnored(file.parent?.path || '')) {
             continue;
           }
-
-          // Use MetadataCache API to get file metadata
+  
           const metadata = app.metadataCache.getFileCache(file);
           
           if (metadata?.frontmatter) {
             const source = metadata.frontmatter[plugin.settings.sourcePropertyName];
             
             if (source) {
-              // Get file content only if we need it
               const content = await app.vault.read(file);
-              
-              // Get tags from metadata cache instead of parsing content
-              let tags: string[] = [];
-              
-              // Combine frontmatter tags and inline tags
-              if (metadata.tags) {
-                tags = metadata.tags.map(tag => 
-                  typeof tag === 'string' ? tag : tag.tag
-                );
+              let frontmatterTags: string[] = [];
+              let contentTags: string[] = [];
+  
+              // Process frontmatter tags
+              if (plugin.settings.includeFrontmatterTags && metadata.frontmatter.tags) {
+                if (Array.isArray(metadata.frontmatter.tags)) {
+                  frontmatterTags = metadata.frontmatter.tags;
+                } else if (typeof metadata.frontmatter.tags === 'string') {
+                  frontmatterTags = metadata.frontmatter.tags
+                    .split(',')
+                    .map(tag => tag.trim());
+                }
+                // Clean up frontmatter tags
+                frontmatterTags = frontmatterTags
+                  .map(tag => tag.startsWith('#') ? tag.slice(1) : tag)
+                  .filter(Boolean);
               }
-              
-              // Add any additional inline tags not in frontmatter
-              const inlineTags = metadata.tags?.map(tag => 
-                typeof tag === 'string' ? tag : tag.tag
-              ) || [];
-              
-              // Combine and remove duplicates
-              tags = [...new Set([...tags, ...inlineTags])];
-
+  
+              // Process content tags from metadata cache
+              if (metadata.tags) {
+                contentTags = metadata.tags
+                  .map(tag => typeof tag === 'string' ? tag : tag.tag)
+                  .map(tag => tag.startsWith('#') ? tag.slice(1) : tag)
+                  .filter(Boolean);
+              }
+  
+              // Remove duplicates within each array
+              frontmatterTags = [...new Set(frontmatterTags)];
+              contentTags = [...new Set(contentTags)];
+  
+              // Create combined tags array for search functionality
+              const allTags = [...frontmatterTags, ...contentTags];
+  
               articleFiles.push({
                 title: file.basename,
                 url: source,
                 path: file.path,
                 date: file.stat.ctime,
-                tags,
+                tags: allTags, // Keep combined tags for search
+                frontmatterTags,
+                contentTags,
                 basename: file.basename,
                 content: content
               });
@@ -150,16 +166,16 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           console.error(`Error processing file ${file.path}:`, error);
         }
       }
-
+  
       setArticles(articleFiles);
     } catch (error) {
+      console.error("Error loading articles:", error);
       setError("Failed to load articles");
     } finally {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories]);
-
+  }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories, plugin.settings]);
 
   // Initial load
   useEffect(() => {
@@ -461,7 +477,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 Path {getSortIcon('path')}
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
-                #Tags
+                Tags
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
                 Link
@@ -507,16 +523,42 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   {article.path.split('/').slice(0, -1).join('/')}
                 </td>
                 <td className="cc-px-4 cc-py-2">
-                  <div className="cc-flex cc-gap-1 cc-flex-wrap">
-                    {article.tags.map((tag, i) => (
-                      <span 
-                        key={i}
-                        onClick={() => setSearchTerm(tag.startsWith('#') ? tag : `#${tag}`)}
-                        className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-tag"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                  <div className="cc-flex cc-gap-1 cc-flex-wrap cc-items-center">
+                    {/* Frontmatter tags section */}
+                    {article.frontmatterTags?.length > 0 && (
+                      <>
+                        <div 
+                          className="cc-relative cc-inline-flex cc-items-center"
+                          data-tooltip="Tags from frontmatter will appear first"
+                        >
+                          <Tag 
+                            className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0 cc-cursor-help" 
+                          />
+                        </div>
+                        {article.frontmatterTags.map((tag, i) => (
+                          <span 
+                            key={`fm-${i}`}
+                            onClick={() => setSearchTerm(`#${tag}`)}
+                            className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-frontmatter-tag"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Content tags section */}
+                    {article.contentTags?.length > 0 && (
+                      article.contentTags.map((tag, i) => (
+                        <span 
+                          key={`content-${i}`}
+                          onClick={() => setSearchTerm(`#${tag}`)}
+                          className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-tag"
+                        >
+                          #{tag}
+                        </span>
+                      ))
+                    )}
                   </div>
                 </td>
                 <td className="cc-px-4 cc-py-2">
