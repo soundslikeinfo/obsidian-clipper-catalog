@@ -12,6 +12,9 @@ A catalog view that provides a powerful interface for all your clipped web artic
 🎨 Clean, modern UI with theme integration  
 📂 Advanced directory filtering options  
 
+## Changelog
+See [CHANGELOG](CHANGELOG.md) for a list of changes and version history.
+
 ## Installation
 
 ### From Obsidian Community Plugins
