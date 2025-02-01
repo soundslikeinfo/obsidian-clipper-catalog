@@ -10,6 +10,11 @@ interface ObsidianClipperCatalogSettings {
   includeFrontmatterTags: boolean;
 }
 
+interface ObsidianSettings {
+  open: () => void;
+  openTabById: (tabId: string) => void;
+}
+
 // Add this before the ObsidianClipperCatalog class definition
 export const ICON_NAME = 'clipper-catalog';
 
@@ -23,6 +28,12 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
 export default class ObsidianClipperCatalog extends Plugin {
   settings: ObsidianClipperCatalogSettings;
 
+  openSettings(): void {
+    const setting = (this.app as any).setting as ObsidianSettings;
+    setting.open();
+    setting.openTabById('clipper-catalog');
+  }
+  
   async onload() {
     await this.loadSettings();
 

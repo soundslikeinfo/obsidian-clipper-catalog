@@ -483,7 +483,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         </div>
       </div>
       
-      <div className="cc-overflow-x-auto cc-min-h-[200px]">
+      <div className="cc-overflow-x-auto cc-min-h-[120px]">
         <table className="cc-w-full cc-text-sm">
           <colgroup>
             <col className="cc-w-[30%]" />
@@ -625,9 +625,13 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           <div className="clipper-catalog-muted">
             No articles found matching your search.
           </div>
-          <div className="cc-text-xs cc-text-muted">
+          <div className="cc-text-xs cc-text-muted cc-max-w-[400px] cc-text-center cc-mx-auto">
             Note: This catalog shows any markdown files containing a URL in their frontmatter under the property: "{plugin.settings.sourcePropertyName}". 
-            You can change this property name in plugin settings to match your preferred clipping workflow.
+            You can change this property name in <span 
+              className="cc-text-accent cc-underline cc-cursor-pointer hover:cc-opacity-80"
+              onClick={() => plugin.openSettings()}
+            >
+              plugin&nbsp;settings</span> to match your preferred clipping workflow.
           </div>
         </div>
       )}
