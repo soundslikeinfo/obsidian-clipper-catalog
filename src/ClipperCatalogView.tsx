@@ -33,7 +33,13 @@ export class ClipperCatalogView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     
-    const reactContainer = container.createDiv({ cls: 'clipper-catalog-container' });
+    // Add the view container class
+    container.addClass('clipper-catalog-view');
+    
+    const reactContainer = container.createDiv({ 
+      cls: 'clipper-catalog-plugin clipper-catalog-container' 
+    });
+    
     this.root = createRoot(reactContainer);
     
     this.root.render(
@@ -48,5 +54,16 @@ export class ClipperCatalogView extends ItemView {
     if (this.root) {
       this.root.unmount();
     }
+  }
+
+  onResize() {
+    super.onResize();
+    // Trigger a re-render of our React component
+    this.root?.render(
+      React.createElement(ClipperCatalog, {
+        app: this.app,
+        plugin: this.plugin
+      })
+    );
   }
 }

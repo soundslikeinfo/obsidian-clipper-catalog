@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, Tag } from 'lucide-react';
-import { TFile, App } from 'obsidian';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, HelpCircle, Tag } from 'lucide-react';
+import { TFile, App, ItemView } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
+import { VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
 
 interface ClipperCatalogProps {
   app: App;
@@ -47,18 +48,50 @@ const ArticleTitle = ({ file, content, title }: { file: TFile, content: string, 
 };
 
 const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isNarrowView, setIsNarrowView] = useState(false);
   const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({
     ignoredDirectories: plugin.settings.ignoredDirectories,
     isExpanded: plugin.settings.isAdvancedSettingsExpanded
   });
   const [newDirectory, setNewDirectory] = useState('');
 
+  // Handle resize observer
+  useEffect(() => {
+    const checkWidth = () => {
+      // Get the current view using recommended API
+      const view = app.workspace.getActiveViewOfType(ItemView);
+      if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
+        const width = view.containerEl.clientWidth;
+        
+        setIsNarrowView(width < 750);
+      }
+    };
+  
+    // Register workspace layout change event
+    const handleLayoutChange = () => {
+      requestAnimationFrame(checkWidth); // Use requestAnimationFrame for smoother handling
+    };
+  
+    app.workspace.on('layout-change', handleLayoutChange);
+    
+    // Initial check
+    requestAnimationFrame(checkWidth);
+  
+    // Also check on window resize
+    window.addEventListener('resize', handleLayoutChange);
+  
+    return () => {
+      app.workspace.off('layout-change', handleLayoutChange);
+      window.removeEventListener('resize', handleLayoutChange);
+    };
+  }, [app.workspace]);
 
   // Save advanced settings to localStorage whenever they change
   useEffect(() => {
@@ -182,7 +215,6 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     loadArticles();
   }, [loadArticles, advancedSettings.ignoredDirectories]);
 
-  
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadArticles();
@@ -338,7 +370,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           Advanced search options
         </button>
         {!advancedSettings.isExpanded && excludedCount > 0 && (
-          <em className="cc-text-xs cc-text-muted">
+          <em className="cc-text-xs cc-text-muted cc-p-2">
             Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
           </em>
         )}
@@ -347,7 +379,11 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   };
 
   return (
-    <div className="cc-flex cc-flex-col cc-gap-4">
+    <div 
+      ref={containerRef} 
+      className={`clipper-catalog-content cc-flex cc-flex-col cc-gap-4${isNarrowView ? ' cc-narrow-view' : ''}`}
+      data-narrow={isNarrowView ? 'true' : 'false'} // Add this for debugging
+    >
       <div className="cc-relative">
         {/* Search input container */}
         <div className="cc-flex cc-items-center cc-gap-2 cc-px-4 cc-py-2 cc-rounded-lg clipper-catalog-search">
@@ -388,7 +424,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     placeholder="Enter full paths to ignore (comma-separated, e.g., research/links/delago, work/expenses)"
                     value={newDirectory}
                     onChange={(e) => setNewDirectory(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyUp={handleKeyPress}
                     className="cc-flex-1 cc-px-2 cc-py-1 cc-text-sm cc-rounded clipper-catalog-input"
                   />
                   <button
@@ -447,12 +483,12 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         </div>
       </div>
       
-      <div className="cc-overflow-x-auto">
+      <div className="cc-overflow-x-auto cc-min-h-[120px]">
         <table className="cc-w-full cc-text-sm">
           <colgroup>
             <col className="cc-w-[30%]" />
-            <col className="cc-w-[15%]" />
-            <col className="cc-w-[22%]" />
+            <col className="cc-w-[15%] cc-narrow-view-hidden" />
+            <col className="cc-w-[22%] cc-narrow-view-hidden" />
             <col className="cc-w-[20%]" />
             <col className="cc-w-[13%]" />
           </colgroup>
@@ -466,18 +502,31 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               </th>
               <th 
                 onClick={() => handleSort('date')}
-                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer cc-whitespace-nowrap clipper-catalog-header-cell"
+                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer cc-whitespace-nowrap clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
                 Date {getSortIcon('date')}
               </th>
               <th 
                 onClick={() => handleSort('path')}
-                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
+                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
                 Path {getSortIcon('path')}
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
-                Tags
+                <div className="cc-flex cc-items-center cc-gap-1">
+                  <Tag className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0" />
+                  Tags
+                  {plugin.settings.includeFrontmatterTags && (
+                    <>
+                      <div 
+                        className="cc-relative cc-inline-flex cc-items-center"
+                        data-tooltip="Frontmatter tags (bordered) appear first, followed by inline content tags (filled)"
+                      >
+                        <HelpCircle className="cc-h-4 cc-w-4 clipper-catalog-help-icon cc-flex-shrink-0 cc-cursor-help" />
+                      </div>
+                    </>
+                  )}
+                </div>
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
                 Link
@@ -516,25 +565,17 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     })()}
                   </span>
                 </td>
-                <td className="cc-px-4 cc-py-2 clipper-catalog-muted">
+                <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
                   {formatDate(article.date)}
                 </td>
-                <td className="cc-px-4 cc-py-2 clipper-catalog-muted">
-                  {article.path.split('/').slice(0, -1).join('/')}
+                <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
+                  {article.path.split('/').slice(0, -1).join('/') || '/'}
                 </td>
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-gap-1 cc-flex-wrap cc-items-center">
                     {/* Frontmatter tags section */}
                     {article.frontmatterTags?.length > 0 && (
                       <>
-                        <div 
-                          className="cc-relative cc-inline-flex cc-items-center"
-                          data-tooltip="Tags from frontmatter will appear first"
-                        >
-                          <Tag 
-                            className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0 cc-cursor-help" 
-                          />
-                        </div>
                         {article.frontmatterTags.map((tag, i) => (
                           <span 
                             key={`fm-${i}`}
@@ -570,7 +611,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   title={`Go to ${article.url}`}
                 >
                   <Link className="cc-h-3 cc-w-3" />
-                  <span className="cc-text-xs">Original</span>
+                  <span className="cc-text-xs">Visit</span>
                 </a>
               </td>
               </tr>
@@ -584,9 +625,13 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           <div className="clipper-catalog-muted">
             No articles found matching your search.
           </div>
-          <div className="cc-text-xs cc-text-muted">
+          <div className="cc-text-xs cc-text-muted cc-max-w-[400px] cc-text-center cc-mx-auto">
             Note: This catalog shows any markdown files containing a URL in their frontmatter under the property: "{plugin.settings.sourcePropertyName}". 
-            You can change this property name in plugin settings to match your preferred clipping workflow.
+            You can change this property name in <span 
+              className="cc-text-accent cc-underline cc-cursor-pointer hover:cc-opacity-80"
+              onClick={() => plugin.openSettings()}
+            >
+              plugin&nbsp;settings</span> to match your preferred clipping workflow.
           </div>
         </div>
       )}

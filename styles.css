@@ -18,6 +18,11 @@
   top: 100%;
 }
 
+.cc-mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .cc-ml-2 {
   margin-left: 0.5rem;
 }
@@ -62,6 +67,10 @@
   min-height: 1.5rem;
 }
 
+.cc-min-h-\[120px\] {
+  min-height: 120px;
+}
+
 .cc-w-2\.5 {
   width: 0.625rem;
 }
@@ -100,6 +109,10 @@
 
 .cc-w-full {
   width: 100%;
+}
+
+.cc-max-w-\[400px\] {
+  max-width: 400px;
 }
 
 .cc-flex-1 {
@@ -213,6 +226,10 @@
 
 .cc-bg-transparent {
   background-color: transparent;
+}
+
+.cc-p-2 {
+  padding: 0.5rem;
 }
 
 .cc-p-4 {
@@ -391,14 +408,10 @@
   font-size: .75rem;
 }
 
-/* Scoped plugin styles */
-
 .clipper-catalog-plugin {
   /* Add minimal reset only for our plugin elements */
   & * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
   }
   /* Loading spinner styles */
   .loading-spinner-container {
@@ -533,18 +546,16 @@
 
 .clipper-catalog-header-cell {
   color: var(--text-normal);
-}
-
-.clipper-catalog-header-cell:hover {
-  background-color: var(--background-modifier-hover);
+  &:hover {
+    background-color: var(--background-modifier-hover);
+  }
 }
 
 .clipper-catalog-row {
   border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.clipper-catalog-row:hover {
-  background-color: var(--background-modifier-hover);
+  &:hover {
+    background-color: var(--background-modifier-hover);
+  }
 }
 
 /* Text and icon styles */
@@ -566,66 +577,88 @@
 
 /* Tag styles */
 
+/* Tag styles */
+
+.clipper-catalog-tag,
+.clipper-catalog-frontmatter-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
 .clipper-catalog-tag {
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
-  transition: opacity 0.2s ease;
 }
 
 .clipper-catalog-frontmatter-tag {
   background-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
   color: var(--text-normal);
   border: 1px solid var(--interactive-accent);
-  transition: opacity 0.2s ease;
 }
 
-.clipper-catalog-tag:hover,
-.clipper-catalog-frontmatter-tag:hover {
-  opacity: 0.8;
+/* Tags container */
+
+.cc-flex.cc-gap-1.cc-flex-wrap.cc-items-center {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 0;
 }
 
-.clipper-catalog-tag-icon {
-  position: relative;
-  top: 1px;
-  /* Fine-tune this value as needed */
-  color: var(--text-muted);
+/* Remove the negative margin we added earlier */
+
+.clipper-catalog-plugin .cc-flex.cc-gap-1.cc-flex-wrap {
+  margin: 0;
+  & > * {
+    margin: 0;
+  }
 }
 
 /* Tooltip styles */
 
 [data-tooltip] {
   position: relative;
-}
-
-[data-tooltip]:hover::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 8px;
-  background-color: var(--background-secondary-alt);
-  color: var(--text-muted);
-  font-size: 11px;
-  white-space: nowrap;
-  border-radius: 3px;
-  margin-bottom: 6px;
-  z-index: 1000;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  opacity: 0.9;
-}
-
-.clipper-catalog-tag-icon {
-  position: relative;
-  top: 1px;
-  color: var(--text-muted);
-  cursor: help;
+  &:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 8px;
+    background-color: var(--background-secondary-alt);
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    border-radius: 3px;
+    margin-bottom: 6px;
+    z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+  }
 }
 
 /* Ensure tooltip appears above other content */
 
 .cc-z-50 {
   z-index: 50;
+}
+
+.clipper-catalog-help-icon {
+  position: relative;
+  color: var(--text-accent);
+  cursor: help;
+  opacity: 0.8;
+  top: 0;
+  transition: opacity 0.2s ease;
+  &:hover {
+    opacity: 1;
+  }
 }
 
 /* Link styles */
@@ -635,11 +668,52 @@
   font-size: 0.75rem;
   padding: 0.25rem 0;
   transition: opacity 0.2s ease;
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 
-.clipper-catalog-link:hover {
-  opacity: 0.8;
-  text-decoration: underline;
+/* Header help icon tooltip positioning */
+
+.clipper-catalog-header-cell{
+  [data-tooltip] {
+    padding-left: 5px;
+    position: relative;
+    display: inline-flex;
+  }
+  [data-tooltip]:hover::before {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -5.3rem;
+    white-space: normal;
+    width: 200px;
+    max-width: 300px;
+    text-align: center;
+    line-height: 1.4;
+    font-size: 12px;
+    padding: 8px 12px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+  }
+}
+
+.cc-narrow-view {
+  max-width: 100%;
+  overflow-x: auto;
+  .cc-narrow-view-hidden{
+    display: none;
+  }
+  .clipper-catalog-header-cell [data-tooltip]:hover::before {
+    transform: translateX(-50%);
+    width: 150px;
+    max-width: 150px;
+    font-size: 10px;
+  }
 }
 
 .hover\:cc-bg-blue-200:hover {
@@ -664,6 +738,10 @@
 
 .hover\:cc-underline:hover {
   text-decoration-line: underline;
+}
+
+.hover\:cc-opacity-80:hover {
+  opacity: 0.8;
 }
 
 .hover\:cc-opacity-90:hover {
