@@ -161,19 +161,20 @@
 
 .clipper-catalog-header-cell {
   color: var(--text-normal);
-}
 
-.clipper-catalog-header-cell:hover {
-  background-color: var(--background-modifier-hover);
+  &:hover {
+    background-color: var(--background-modifier-hover);
+  }
 }
 
 .clipper-catalog-row {
   border-bottom: 1px solid var(--background-modifier-border);
+
+  &:hover {
+    background-color: var(--background-modifier-hover);
+  }
 }
 
-.clipper-catalog-row:hover {
-  background-color: var(--background-modifier-hover);
-}
 
 /* Text and icon styles */
 .clipper-catalog-input {
@@ -235,31 +236,24 @@
 /* Tooltip styles */
 [data-tooltip] {
   position: relative;
-}
 
-[data-tooltip]:hover::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 8px;
-  background-color: var(--background-secondary-alt);
-  color: var(--text-muted);
-  font-size: 11px;
-  white-space: nowrap;
-  border-radius: 3px;
-  margin-bottom: 6px;
-  z-index: 1000;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  opacity: 0.9;
-}
-
-.clipper-catalog-help-icon {
-  position: relative;
-  top: 1px;
-  color: var(--text-muted);
-  cursor: help;
+  &:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 8px;
+    background-color: var(--background-secondary-alt);
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    border-radius: 3px;
+    margin-bottom: 6px;
+    z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+  }
 }
 
 /* Ensure tooltip appears above other content */
@@ -267,18 +261,17 @@
   z-index: 50;
 }
 
-/* Ensure the help icon stands out */
 .clipper-catalog-help-icon {
   position: relative;
   color: var(--text-accent);
   cursor: help;
   opacity: 0.8;
-  top: -1px;
+  top: 0;
   transition: opacity 0.2s ease;
-}
-
-.clipper-catalog-help-icon:hover {
-  opacity: 1;
+  
+  &:hover {
+    opacity: 1;
+  }
 }
 
 /* Link styles */
@@ -287,50 +280,52 @@
   font-size: 0.75rem;
   padding: 0.25rem 0;
   transition: opacity 0.2s ease;
-}
-
-.clipper-catalog-link:hover {
-  opacity: 0.8;
-  text-decoration: underline;
+  
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 
 /* Header help icon tooltip positioning */
-.clipper-catalog-header-cell [data-tooltip] {
-  padding-left: 5px;
-  position: relative;
-  display: inline-flex;
-}
+.clipper-catalog-header-cell{
+  [data-tooltip] {
+    padding-left: 5px;
+    position: relative;
+    display: inline-flex;
+  }
 
-.clipper-catalog-header-cell [data-tooltip]:hover::before {
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -5.3rem;
-  white-space: normal;
-  width: 200px;
-  max-width: 300px;
-  text-align: center;
-  line-height: 1.4;
-  font-size: 12px;
-  padding: 8px 12px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1001;
-  backdrop-filter: blur(4px);
+  [data-tooltip]:hover::before {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -5.3rem;
+    white-space: normal;
+    width: 200px;
+    max-width: 300px;
+    text-align: center;
+    line-height: 1.4;
+    font-size: 12px;
+    padding: 8px 12px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    backdrop-filter: blur(4px);
+  }
 }
 
 .cc-narrow-view {
   max-width: 100%;
   overflow-x: auto;
-}
 
-.cc-narrow-view .clipper-catalog-header-cell [data-tooltip]:hover::before {
-  transform: translateX(-50%);
-  width: 150px;
-  max-width: 150px;
-  font-size: 10px; 
-}
+  .cc-narrow-view-hidden{
+    display: none;
+  }
 
-.cc-narrow-view  .cc-narrow-view-hidden{
-  display: none;
+  .clipper-catalog-header-cell [data-tooltip]:hover::before {
+    transform: translateX(-50%);
+    width: 150px;
+    max-width: 150px;
+    font-size: 10px; 
+  }
 }

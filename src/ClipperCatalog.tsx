@@ -424,7 +424,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     placeholder="Enter full paths to ignore (comma-separated, e.g., research/links/delago, work/expenses)"
                     value={newDirectory}
                     onChange={(e) => setNewDirectory(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyUp={handleKeyPress}
                     className="cc-flex-1 cc-px-2 cc-py-1 cc-text-sm cc-rounded clipper-catalog-input"
                   />
                   <button
@@ -516,12 +516,16 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 <div className="cc-flex cc-items-center cc-gap-1">
                   <Tag className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0" />
                   Tags
-                  <div 
-                    className="cc-relative cc-inline-flex cc-items-center"
-                    data-tooltip="Frontmatter tags (bordered) appear first, followed by inline content tags (filled)"
-                  >
-                    <HelpCircle className="cc-h-4 cc-w-4 clipper-catalog-help-icon cc-flex-shrink-0 cc-cursor-help" />
-                  </div>
+                  {plugin.settings.includeFrontmatterTags && (
+                    <>
+                      <div 
+                        className="cc-relative cc-inline-flex cc-items-center"
+                        data-tooltip="Frontmatter tags (bordered) appear first, followed by inline content tags (filled)"
+                      >
+                        <HelpCircle className="cc-h-4 cc-w-4 clipper-catalog-help-icon cc-flex-shrink-0 cc-cursor-help" />
+                      </div>
+                    </>
+                  )}
                 </div>
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
