@@ -370,7 +370,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           Advanced search options
         </button>
         {!advancedSettings.isExpanded && excludedCount > 0 && (
-          <em className="cc-text-xs cc-text-muted">
+          <em className="cc-text-xs cc-text-muted cc-p-2">
             Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
           </em>
         )}
@@ -611,7 +611,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   title={`Go to ${article.url}`}
                 >
                   <Link className="cc-h-3 cc-w-3" />
-                  <span className="cc-text-xs">Original</span>
+                  <span className="cc-text-xs">Visit</span>
                 </a>
               </td>
               </tr>
