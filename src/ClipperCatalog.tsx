@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, Tag } from 'lucide-react';
-import { TFile, App } from 'obsidian';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, HelpCircle, Tag } from 'lucide-react';
+import { TFile, App, ItemView } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
+import { VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
 
 interface ClipperCatalogProps {
   app: App;
@@ -47,18 +48,60 @@ const ArticleTitle = ({ file, content, title }: { file: TFile, content: string, 
 };
 
 const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isNarrowView, setIsNarrowView] = useState(false);
   const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({
     ignoredDirectories: plugin.settings.ignoredDirectories,
     isExpanded: plugin.settings.isAdvancedSettingsExpanded
   });
   const [newDirectory, setNewDirectory] = useState('');
 
+  
+
+  // Handle resize observer
+  useEffect(() => {
+    const checkWidth = () => {
+      // Get the current view using recommended API
+      const view = app.workspace.getActiveViewOfType(ItemView);
+      if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
+        const width = view.containerEl.clientWidth;
+        console.log('[Clipper Catalog] View width:', width);
+        setIsNarrowView(width < 750);
+      }
+    };
+  
+    // Register workspace layout change event
+    const handleLayoutChange = () => {
+      requestAnimationFrame(checkWidth); // Use requestAnimationFrame for smoother handling
+    };
+  
+    app.workspace.on('layout-change', handleLayoutChange);
+    
+    // Initial check
+    requestAnimationFrame(checkWidth);
+  
+    // Also check on window resize
+    window.addEventListener('resize', handleLayoutChange);
+  
+    return () => {
+      app.workspace.off('layout-change', handleLayoutChange);
+      window.removeEventListener('resize', handleLayoutChange);
+    };
+  }, [app.workspace]);
+  
+  // Add state change logging
+  useEffect(() => {
+    console.log('[Clipper Catalog] Narrow view state changed:', {
+      isNarrow: isNarrowView,
+      classes: `clipper-catalog-content cc-flex cc-flex-col cc-gap-4${isNarrowView ? ' cc-narrow-view' : ''}`
+    });
+  }, [isNarrowView]);
 
   // Save advanced settings to localStorage whenever they change
   useEffect(() => {
@@ -190,6 +233,14 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   
     return () => clearInterval(intervalId);
   }, [loadArticles]);
+
+
+useEffect(() => {
+  console.log('[Clipper Catalog] View state changed:', isNarrowView ? 'narrow' : 'wide');
+}, [isNarrowView]);
+
+// Add a class name debug log
+console.log('[Clipper Catalog] Container classes:', `cc-flex cc-flex-col cc-gap-4 ${isNarrowView ? 'cc-narrow-view' : ''}`);
 
   if (error) {
     return (
@@ -347,7 +398,11 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   };
 
   return (
-    <div className="cc-flex cc-flex-col cc-gap-4">
+    <div 
+      ref={containerRef} 
+      className={`clipper-catalog-content cc-flex cc-flex-col cc-gap-4${isNarrowView ? ' cc-narrow-view' : ''}`}
+      data-narrow={isNarrowView ? 'true' : 'false'} // Add this for debugging
+    >
       <div className="cc-relative">
         {/* Search input container */}
         <div className="cc-flex cc-items-center cc-gap-2 cc-px-4 cc-py-2 cc-rounded-lg clipper-catalog-search">
@@ -447,7 +502,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         </div>
       </div>
       
-      <div className="cc-overflow-x-auto">
+      <div className="cc-overflow-x-auto cc-min-h-[200px]">
         <table className="cc-w-full cc-text-sm">
           <colgroup>
             <col className="cc-w-[30%]" />
@@ -477,7 +532,16 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 Path {getSortIcon('path')}
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
-                Tags
+                <div className="cc-flex cc-items-center cc-gap-1">
+                  <Tag className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0" />
+                  Tags
+                  <div 
+                    className="cc-relative cc-inline-flex cc-items-center"
+                    data-tooltip="Frontmatter tags (bordered) appear first, followed by inline content tags (filled)"
+                  >
+                    <HelpCircle className="cc-h-4 cc-w-4 clipper-catalog-help-icon cc-flex-shrink-0 cc-cursor-help" />
+                  </div>
+                </div>
               </th>
               <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
                 Link
@@ -520,21 +584,13 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   {formatDate(article.date)}
                 </td>
                 <td className="cc-px-4 cc-py-2 clipper-catalog-muted">
-                  {article.path.split('/').slice(0, -1).join('/')}
+                  {article.path.split('/').slice(0, -1).join('/') || '/'}
                 </td>
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-gap-1 cc-flex-wrap cc-items-center">
                     {/* Frontmatter tags section */}
                     {article.frontmatterTags?.length > 0 && (
                       <>
-                        <div 
-                          className="cc-relative cc-inline-flex cc-items-center"
-                          data-tooltip="Tags from frontmatter will appear first"
-                        >
-                          <Tag 
-                            className="cc-h-3.5 cc-w-3.5 clipper-catalog-tag-icon cc-flex-shrink-0 cc-cursor-help" 
-                          />
-                        </div>
                         {article.frontmatterTags.map((tag, i) => (
                           <span 
                             key={`fm-${i}`}

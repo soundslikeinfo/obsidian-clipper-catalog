@@ -16,13 +16,10 @@
   font-size: .75rem;
 }
 
-/* Scoped plugin styles */
 .clipper-catalog-plugin {
   /* Add minimal reset only for our plugin elements */
   & * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
   }
 
   /* Loading spinner styles */
@@ -195,28 +192,44 @@
 }
 
 /* Tag styles */
+/* Tag styles */
+.clipper-catalog-tag,
+.clipper-catalog-frontmatter-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
 .clipper-catalog-tag {
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
-  transition: opacity 0.2s ease;
 }
 
 .clipper-catalog-frontmatter-tag {
   background-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
   color: var(--text-normal);
   border: 1px solid var(--interactive-accent);
-  transition: opacity 0.2s ease;
 }
 
-.clipper-catalog-tag:hover,
-.clipper-catalog-frontmatter-tag:hover {
-  opacity: 0.8;
+/* Tags container */
+.cc-flex.cc-gap-1.cc-flex-wrap.cc-items-center {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 0;
 }
 
-.clipper-catalog-tag-icon {
-  position: relative;
-  top: 1px; /* Fine-tune this value as needed */
-  color: var(--text-muted);
+/* Remove the negative margin we added earlier */
+.clipper-catalog-plugin .cc-flex.cc-gap-1.cc-flex-wrap {
+  margin: 0;
+  & > * {
+    margin: 0;
+  }
 }
 
 /* Tooltip styles */
@@ -242,7 +255,7 @@
   opacity: 0.9;
 }
 
-.clipper-catalog-tag-icon {
+.clipper-catalog-help-icon {
   position: relative;
   top: 1px;
   color: var(--text-muted);
@@ -252,6 +265,20 @@
 /* Ensure tooltip appears above other content */
 .cc-z-50 {
   z-index: 50;
+}
+
+/* Ensure the help icon stands out */
+.clipper-catalog-help-icon {
+  position: relative;
+  color: var(--text-accent);
+  cursor: help;
+  opacity: 0.8;
+  top: -1px;
+  transition: opacity 0.2s ease;
+}
+
+.clipper-catalog-help-icon:hover {
+  opacity: 1;
 }
 
 /* Link styles */
@@ -265,4 +292,50 @@
 .clipper-catalog-link:hover {
   opacity: 0.8;
   text-decoration: underline;
+}
+
+/* Header help icon tooltip positioning */
+.clipper-catalog-header-cell [data-tooltip] {
+  padding-left: 5px;
+  position: relative;
+  display: inline-flex;
+}
+
+.clipper-catalog-header-cell [data-tooltip]:hover::before {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -5.3rem;
+  white-space: normal;
+  width: 200px;
+  max-width: 300px;
+  text-align: center;
+  line-height: 1.4;
+  font-size: 12px;
+  padding: 8px 12px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  backdrop-filter: blur(4px);
+}
+
+/* .clipper-catalog-plugin .cc-narrow-view .clipper-catalog-header-cell [data-tooltip]:hover::before {
+  left: 0;
+  transform: none;
+  width: 150px; 
+  max-width: 150px;
+} */
+
+
+.cc-narrow-view {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.cc-narrow-view .clipper-catalog-header-cell [data-tooltip]:hover::before {
+  
+  transform: translateX(-50%);
+  width: 150px;
+  max-width: 150px;
+  font-size: 10px; 
 }
