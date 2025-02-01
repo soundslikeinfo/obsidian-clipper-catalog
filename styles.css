@@ -702,13 +702,6 @@
           backdrop-filter: blur(4px);
 }
 
-/* .clipper-catalog-plugin .cc-narrow-view .clipper-catalog-header-cell [data-tooltip]:hover::before {
-  left: 0;
-  transform: none;
-  width: 150px; 
-  max-width: 150px;
-} */
-
 .cc-narrow-view {
   max-width: 100%;
   overflow-x: auto;
@@ -719,6 +712,10 @@
   width: 150px;
   max-width: 150px;
   font-size: 10px;
+}
+
+.cc-narrow-view  .cc-narrow-view-hidden{
+  display: none;
 }
 
 .hover\:cc-bg-blue-200:hover {

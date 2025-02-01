@@ -62,8 +62,6 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   });
   const [newDirectory, setNewDirectory] = useState('');
 
-  
-
   // Handle resize observer
   useEffect(() => {
     const checkWidth = () => {
@@ -71,7 +69,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       const view = app.workspace.getActiveViewOfType(ItemView);
       if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
         const width = view.containerEl.clientWidth;
-        console.log('[Clipper Catalog] View width:', width);
+        
         setIsNarrowView(width < 750);
       }
     };
@@ -94,14 +92,6 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       window.removeEventListener('resize', handleLayoutChange);
     };
   }, [app.workspace]);
-  
-  // Add state change logging
-  useEffect(() => {
-    console.log('[Clipper Catalog] Narrow view state changed:', {
-      isNarrow: isNarrowView,
-      classes: `clipper-catalog-content cc-flex cc-flex-col cc-gap-4${isNarrowView ? ' cc-narrow-view' : ''}`
-    });
-  }, [isNarrowView]);
 
   // Save advanced settings to localStorage whenever they change
   useEffect(() => {
@@ -225,7 +215,6 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     loadArticles();
   }, [loadArticles, advancedSettings.ignoredDirectories]);
 
-  
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadArticles();
@@ -233,14 +222,6 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   
     return () => clearInterval(intervalId);
   }, [loadArticles]);
-
-
-useEffect(() => {
-  console.log('[Clipper Catalog] View state changed:', isNarrowView ? 'narrow' : 'wide');
-}, [isNarrowView]);
-
-// Add a class name debug log
-console.log('[Clipper Catalog] Container classes:', `cc-flex cc-flex-col cc-gap-4 ${isNarrowView ? 'cc-narrow-view' : ''}`);
 
   if (error) {
     return (
@@ -506,8 +487,8 @@ console.log('[Clipper Catalog] Container classes:', `cc-flex cc-flex-col cc-gap-
         <table className="cc-w-full cc-text-sm">
           <colgroup>
             <col className="cc-w-[30%]" />
-            <col className="cc-w-[15%]" />
-            <col className="cc-w-[22%]" />
+            <col className="cc-w-[15%] cc-narrow-view-hidden" />
+            <col className="cc-w-[22%] cc-narrow-view-hidden" />
             <col className="cc-w-[20%]" />
             <col className="cc-w-[13%]" />
           </colgroup>
@@ -521,13 +502,13 @@ console.log('[Clipper Catalog] Container classes:', `cc-flex cc-flex-col cc-gap-
               </th>
               <th 
                 onClick={() => handleSort('date')}
-                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer cc-whitespace-nowrap clipper-catalog-header-cell"
+                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer cc-whitespace-nowrap clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
                 Date {getSortIcon('date')}
               </th>
               <th 
                 onClick={() => handleSort('path')}
-                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
+                className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
                 Path {getSortIcon('path')}
               </th>
@@ -580,10 +561,10 @@ console.log('[Clipper Catalog] Container classes:', `cc-flex cc-flex-col cc-gap-
                     })()}
                   </span>
                 </td>
-                <td className="cc-px-4 cc-py-2 clipper-catalog-muted">
+                <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
                   {formatDate(article.date)}
                 </td>
-                <td className="cc-px-4 cc-py-2 clipper-catalog-muted">
+                <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
                   {article.path.split('/').slice(0, -1).join('/') || '/'}
                 </td>
                 <td className="cc-px-4 cc-py-2">
