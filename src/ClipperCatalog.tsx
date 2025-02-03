@@ -284,13 +284,35 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     return null;
   };
 
-  const openArticle = (path: string) => {
+  const openArticle = (path: string, event: React.MouseEvent) => {
     const file = app.vault.getAbstractFileByPath(path);
     if (file instanceof TFile) {
-      const leaf = app.workspace.getLeaf(false);
-      leaf.openFile(file);
+        const newLeaf = event.ctrlKey || event.metaKey; // Check for Ctrl (Windows) or Command (Mac)
+
+        if (plugin.settings.openInSameLeaf) {
+            // Get the active leaf
+            const activeLeaf = app.workspace.activeLeaf;
+
+            if (newLeaf) {
+                // Open in a new leaf
+                const leaf = app.workspace.getLeaf(false);
+                leaf.openFile(file);
+            } else {
+                // Open in the active leaf
+                if (activeLeaf?.getViewState().type === VIEW_TYPE_CLIPPER_CATALOG) {
+                    activeLeaf.openFile(file);
+                } else {
+                    const leaf = app.workspace.getLeaf(false);
+                    leaf.openFile(file);
+                }
+            }
+        } else {
+            // Original behavior - When not using the same leaf setting, just open in a new leaf
+            const leaf = app.workspace.getLeaf(false);
+            leaf.openFile(file);
+        }
     }
-  };
+};
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -538,7 +560,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               <tr key={article.path} className="clipper-catalog-row">
                 <td className="cc-px-4 cc-py-2">
                   <span
-                    onClick={() => openArticle(article.path)}
+                    onClick={(event) => openArticle(article.path, event)}
                     className="cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title"
                   >
                     <svg 

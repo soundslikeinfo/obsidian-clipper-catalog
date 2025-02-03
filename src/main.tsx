@@ -8,6 +8,7 @@ interface ObsidianClipperCatalogSettings {
   ignoredDirectories: string[];
   isAdvancedSettingsExpanded: boolean;
   includeFrontmatterTags: boolean;
+  openInSameLeaf: boolean;
 }
 
 interface ObsidianSettings {
@@ -22,7 +23,8 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   sourcePropertyName: 'source',
   ignoredDirectories: [],
   isAdvancedSettingsExpanded: false,
-  includeFrontmatterTags: true
+  includeFrontmatterTags: true,
+  openInSameLeaf: false
 }
 
 export default class ObsidianClipperCatalog extends Plugin {
@@ -127,5 +129,15 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
         this.plugin.settings.includeFrontmatterTags = value;
         await this.plugin.saveSettings();
       }));
+
+    new Setting(containerEl)
+      .setName('Open notes in same window')
+      .setDesc('When enabled, clicking a note title will open it in the active window instead of creating a new one. To open the note in a new window, hold down the Ctrl key on Windows or the Command key on Mac while clicking the title.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.openInSameLeaf)
+        .onChange(async (value) => {
+          this.plugin.settings.openInSameLeaf = value;
+          await this.plugin.saveSettings();
+        }));
   }
 }
