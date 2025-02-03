@@ -190,9 +190,42 @@
 
 .clipper-catalog-title {
   color: var(--text-normal);
+  .cc-font-bold {
+    font-weight: 600;
+  }
 }
 
-/* Tag styles */
+/* Checkbox styles */
+.clipper-catalog-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--background-primary);
+  border: 1px solid var(--checkbox-border-color, var(--text-muted));
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  padding: 0;
+}
+
+.clipper-catalog-checkbox:checked {
+  background-color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.clipper-catalog-checkbox:checked::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background-color: var(--text-on-accent, white);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
 /* Tag styles */
 .clipper-catalog-tag,
 .clipper-catalog-frontmatter-tag {

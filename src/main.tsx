@@ -9,6 +9,7 @@ interface ObsidianClipperCatalogSettings {
   isAdvancedSettingsExpanded: boolean;
   includeFrontmatterTags: boolean;
   openInSameLeaf: boolean;
+  readPropertyName: string;
 }
 
 interface ObsidianSettings {
@@ -24,7 +25,8 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   ignoredDirectories: [],
   isAdvancedSettingsExpanded: false,
   includeFrontmatterTags: true,
-  openInSameLeaf: false
+  openInSameLeaf: false,
+  readPropertyName: ''
 }
 
 export default class ObsidianClipperCatalog extends Plugin {
@@ -139,5 +141,22 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
           this.plugin.settings.openInSameLeaf = value;
           await this.plugin.saveSettings();
         }));
+
+    containerEl.createEl('div', {
+      text: '⚠️ Warning: The next setting will allow the catalog to overwrite any property you set here. Proceed if you know what you are doing.',
+      cls: 'setting-item-description warning-text'
+    }).style.color = 'var(--text-warning)';
+    
+    new Setting(containerEl)
+      .setName('Read status property name')
+      .setDesc('Leave blank to hide checkboxes. If set, specifies which frontmatter property tracks read status (e.g., "read", "completed"). Note: Changing this affects new changes only and will not erase any values.')
+      .addText(text => text
+        .setPlaceholder('e.g., read')
+        .setValue(this.plugin.settings.readPropertyName)
+        .onChange(async (value) => {
+          this.plugin.settings.readPropertyName = value;
+          await this.plugin.saveSettings();
+        }));
+        
   }
 }
