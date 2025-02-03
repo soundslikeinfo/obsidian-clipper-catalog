@@ -1,5 +1,8 @@
 ## Changelog
 
+### [1.0.9] - 2025-02-03
+- Added setting that can open notes in the same window, to help those who use mobile navigation.
+
 ### [1.0.8] - 2025-02-01
 - Introduce CHANGELOG
 - Moved all tag hints to the header row for cleaner UI  
