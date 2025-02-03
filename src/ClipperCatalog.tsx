@@ -284,29 +284,35 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     return null;
   };
 
-  const openArticle = (path: string) => {
+  const openArticle = (path: string, event: React.MouseEvent) => {
     const file = app.vault.getAbstractFileByPath(path);
     if (file instanceof TFile) {
-      if (plugin.settings.openInSameLeaf) {
-        // Get the active leaf
-        const activeLeaf = app.workspace.activeLeaf;
-        
-        // Check if the active leaf is a Clipper Catalog view
-        if (activeLeaf?.getViewState().type === VIEW_TYPE_CLIPPER_CATALOG) {
-          // Open the file in this active Clipper Catalog leaf
-          activeLeaf.openFile(file);
+        const newLeaf = event.ctrlKey || event.metaKey; // Check for Ctrl (Windows) or Command (Mac)
+
+        if (plugin.settings.openInSameLeaf) {
+            // Get the active leaf
+            const activeLeaf = app.workspace.activeLeaf;
+
+            if (newLeaf) {
+                // Open in a new leaf
+                const leaf = app.workspace.getLeaf(false);
+                leaf.openFile(file);
+            } else {
+                // Open in the active leaf
+                if (activeLeaf?.getViewState().type === VIEW_TYPE_CLIPPER_CATALOG) {
+                    activeLeaf.openFile(file);
+                } else {
+                    const leaf = app.workspace.getLeaf(false);
+                    leaf.openFile(file);
+                }
+            }
         } else {
-          // Fallback to opening in a new leaf if active leaf isn't a Clipper Catalog
-          const leaf = app.workspace.getLeaf(false);
-          leaf.openFile(file);
+            // Original behavior - When not using the same leaf setting, just open in a new leaf
+            const leaf = app.workspace.getLeaf(false);
+            leaf.openFile(file);
         }
-      } else {
-        // Original behavior - open in new leaf
-        const leaf = app.workspace.getLeaf(false);
-        leaf.openFile(file);
-      }
     }
-  };
+};
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -554,7 +560,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               <tr key={article.path} className="clipper-catalog-row">
                 <td className="cc-px-4 cc-py-2">
                   <span
-                    onClick={() => openArticle(article.path)}
+                    onClick={(event) => openArticle(article.path, event)}
                     className="cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title"
                   >
                     <svg 
