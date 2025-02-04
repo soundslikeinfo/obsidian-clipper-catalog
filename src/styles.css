@@ -12,15 +12,11 @@
 }
 
 /* Text utilities */
-.text-sm {
-  font-size: .75rem;
-}
+.text-sm { font-size: .75rem; }
 
 .clipper-catalog-plugin {
   /* Add minimal reset only for our plugin elements */
-  & * {
-    box-sizing: border-box;
-  }
+  & * { box-sizing: border-box; }
 
   /* Loading spinner styles */
   .loading-spinner-container {
@@ -43,9 +39,7 @@
     color: #ef4444;
   }
 
-  .input-error {
-    border-color: #ef4444;
-  }
+  .input-error { border-color: #ef4444; }
 
   /* Settings styles */
   &.clipper-catalog-settings {
@@ -130,9 +124,7 @@
   cursor: not-allowed;
 }
 
-.clipper-catalog-button:hover:not(:disabled) {
-  opacity: 0.9;
-}
+.clipper-catalog-button:hover:not(:disabled) { opacity: 0.9; }
 
 /* Directory chip styles */
 .cc-bg-chip {
@@ -175,9 +167,7 @@
 
 
 /* Text and icon styles */
-.clipper-catalog-input {
-  color: var(--text-normal);
-}
+.clipper-catalog-input { color: var(--text-normal); }
 
 .clipper-catalog-icon,
 .clipper-catalog-clear-btn,
@@ -186,10 +176,18 @@
   color: var(--text-muted);
 }
 
+.clipper-catalog-clear-btn{ top: 20% }
+
+.is-mobile .clipper-catalog-clear-btn{ top: 30%; }
+
 .clipper-catalog-title {
   color: var(--text-normal);
   .cc-font-bold {
     font-weight: 600;
+  }
+
+  + span{
+    color: var(--text-muted);
   }
 }
 
@@ -209,6 +207,11 @@
   transition: all 0.2s ease;
   margin: 0;
   padding: 0;
+}
+
+.clipper-catalog-checkbox,
+.clipper-catalog-compatible-checkbox {
+  margin-inline-end: 0 !important;
 }
 
 .clipper-catalog-checkbox:checked {
@@ -372,15 +375,17 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
     z-index: 1001;
     backdrop-filter: blur(4px);
   }
-}
+} 
+
+.cc-narrow-view-visible{ display: none; }
 
 .cc-narrow-view {
   max-width: 100%;
   overflow-x: auto;
 
-  .cc-narrow-view-hidden{
-    display: none;
-  }
+  .cc-narrow-view-visible{ display: block; }
+  
+  .cc-narrow-view-hidden{ display: none; }
 
   .clipper-catalog-header-cell [data-tooltip]:hover::before {
     transform: translateX(-50%);

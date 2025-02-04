@@ -403,16 +403,23 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     const excludedCount = advancedSettings.ignoredDirectories.length;
     
     return (
-      <div className="cc-flex cc-items-center cc-justify-between cc-w-full">
-        <button
-          onClick={toggleAdvancedSettings}
-          className="cc-flex cc-items-center cc-gap-1 cc-text-sm cc-font-medium hover:cc-underline cc-text-muted cc-transition-all"
-        >
-          {advancedSettings.isExpanded ? <ChevronDown className="cc-h-4 cc-w-4" /> : <ChevronRight className="cc-h-4 cc-w-4" />}
-          Advanced search options
-        </button>
+      <div>
+        <div className="cc-flex cc-items-center cc-justify-between cc-w-full">
+          <button
+            onClick={toggleAdvancedSettings}
+            className="cc-flex cc-items-center cc-gap-1 cc-text-sm cc-font-medium hover:cc-underline cc-text-muted cc-transition-all"
+          >
+            {advancedSettings.isExpanded ? <ChevronDown className="cc-h-4 cc-w-4" /> : <ChevronRight className="cc-h-4 cc-w-4" />}
+            Advanced search options
+          </button>
+          {!advancedSettings.isExpanded && excludedCount > 0 && (
+            <em className="cc-text-xs cc-text-muted cc-p-2 cc-narrow-view-hidden">
+              Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
+            </em>
+          )}
+        </div>
         {!advancedSettings.isExpanded && excludedCount > 0 && (
-          <em className="cc-text-xs cc-text-muted cc-p-2">
+          <em className="cc-text-xs cc-text-muted cc-p-2 cc-narrow-view-visible">
             Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
           </em>
         )}
@@ -441,7 +448,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
             {searchTerm && (
               <div 
                 onClick={() => setSearchTerm('')}
-                className="cc-absolute cc-right-2 cc-top-[20%] cc-flex cc-items-center cc-gap-1 cc-cursor-pointer cc-transition-colors clipper-catalog-clear-btn"
+                className="cc-absolute cc-right-2 cc-flex cc-items-center cc-gap-1 cc-cursor-pointer cc-transition-colors clipper-catalog-clear-btn"
               >
                 <svg className="cc-h-3.5 cc-w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -548,7 +555,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 onClick={() => handleSort('title')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
               >
-                Note Title {getSortIcon('title')}
+                Note {getSortIcon('title')}
               </th>
               <th 
                 onClick={() => handleSort('date')}
@@ -587,9 +594,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
             {filteredArticles.map((article) => (
               <tr key={article.path} className="clipper-catalog-row">
                 {plugin.settings.readPropertyName && (
-                  <td className="cc-px-4 cc-py-2" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
+                  <td className="cc-px-1.5 cc-py-2" onClick={(e) => e.stopPropagation()}>
+                    <span className="cc-flex cc-justify-center cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem]">
+                    <input 
+                      type="checkbox" 
                       className={plugin.settings.useNativeCheckbox ? 'clipper-catalog-compatible-checkbox' : 'clipper-catalog-checkbox'}
                       checked={article.read === true}
                       onChange={async (e) => {
@@ -621,13 +629,14 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         }
                       }}
                     />
+                    </span>
                   </td>
                 )}
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-flex-col">
                     <span
                       onClick={(event) => openArticle(article.path, event)}
-                      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title ${
+                      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem] clipper-catalog-title ${
                         (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
                       }`}
                     >
@@ -638,7 +647,9 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         viewBox="0 0 24 24" 
                         stroke="currentColor"
                       >
-                        <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M5 9h14" strokeWidth="1" />
                       </svg>
                       <ArticleTitle 
                         file={app.vault.getAbstractFileByPath(article.path) as TFile}
@@ -650,7 +661,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                       .map(url => isValidUrl(url) ? extractDomain(url) : null)
                       .filter(Boolean)
                       .length > 0 && (
-                        <span className="cc-text-sm cc-text-muted cc-ml-6 cc-italic">
+                        <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
                           Clipped from {Object.values(article.urls)
                             .map(url => isValidUrl(url) ? extractDomain(url) : null)
                             .filter(Boolean)
@@ -707,12 +718,20 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => {
+                            // OnClick to open in external window, even with web viewer plugin enabled
+                            if (e.ctrlKey || e.metaKey) {
+                              e.preventDefault();
+                              // Expected to work in upcoming Obsidian version
+                              window.open(url, '_external');
+                            }
+                          }}
                           className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
                           title={`Go to ${url}`}
                         >
                           <Link className="cc-h-3 cc-w-3" />
-                          <span className="cc-text-xs">
-                            {array.length === 1 ? 'Visit' : propName}
+                          <span className="cc-text-sm">
+                            {array.length === 1 ? `${propName}` : propName}
                           </span>
                         </a>
                         </div>
@@ -723,7 +742,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           title="Invalid URL"
                         >
                           <X className="cc-h-3 cc-w-3" />
-                          <span className="cc-text-xs">{propName}: Invalid URL</span>
+                          <span className="cc-text-xs">{propName}</span>
                         </span>
                       )
                     ))}

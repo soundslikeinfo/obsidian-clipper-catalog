@@ -130,15 +130,17 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .setPlaceholder('e.g., source, url, link')
       .then(textComponent => {
         const inputEl = textComponent.inputEl;
-        // Add blur event listener
+        let initialValue = this.plugin.settings.sourcePropertyName;
+      
         inputEl.addEventListener('blur', async () => {
-          // Refresh all articles
-          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
-            if (leaf.view instanceof ClipperCatalogView) {
-              // Force reload articles
-              leaf.view.onOpen();
-            }
-          });
+          if (inputEl.value !== initialValue) {
+            initialValue = inputEl.value; // Update reference
+            this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+              if (leaf.view instanceof ClipperCatalogView) {
+                leaf.view.onOpen();
+              }
+            });
+          }
         });
       })
       .onChange(async (value) => {
@@ -200,6 +202,21 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .addText(text => text
         .setPlaceholder('e.g., read')
         .setValue(this.plugin.settings.readPropertyName)
+        .then(textComponent => {
+          const inputEl = textComponent.inputEl;
+          let initialValue = this.plugin.settings.readPropertyName;
+        
+          inputEl.addEventListener('blur', async () => {
+            if (inputEl.value !== initialValue) {
+              initialValue = inputEl.value; // Update reference
+              this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+                if (leaf.view instanceof ClipperCatalogView) {
+                  leaf.view.onOpen();
+                }
+              });
+            }
+          });
+        })
         .onChange(async (value) => {
           this.plugin.settings.readPropertyName = value;
           await this.plugin.saveSettings();

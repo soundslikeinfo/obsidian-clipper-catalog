@@ -38,13 +38,16 @@ module.exports = {
       'cc-justify-end',
       'cc-flex',
       'cc-flex-col',
+      'cc-mx-0',
       'cc-mt-4',
       'cc-text-xs',
       'cc-text-sm',
       'cc-font-medium',
+      'cc-px-1.5',
       'cc-px-4',
       'cc-py-2',
       'cc-rounded-lg',
+      'cc-text-muted',
       
       // Dark mode classes
       'dark:cc-bg-gray-800/50',
