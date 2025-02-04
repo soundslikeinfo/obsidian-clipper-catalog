@@ -7,6 +7,7 @@ interface ObsidianClipperCatalogSettings {
   sourcePropertyName: string;
   ignoredDirectories: string[];
   isAdvancedSettingsExpanded: boolean;
+  showClippedFrom: boolean;
   includeFrontmatterTags: boolean;
   openInSameLeaf: boolean;
   readPropertyName: string;
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   sourcePropertyName: 'source',
   ignoredDirectories: [],
   isAdvancedSettingsExpanded: false,
+  showClippedFrom: true,
   includeFrontmatterTags: true,
   openInSameLeaf: false,
   readPropertyName: '',
@@ -115,15 +117,53 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
     containerEl.addClass('clipper-catalog-settings');
 
     new Setting(containerEl)
-    .setName('Property name')
-    .setDesc('Specify which frontmatter property contains your clipped URLs (e.g., "source", "url", "link").')
+    .setName('Property name(s)')
+    .setDesc(createFragment(el => {
+      el.createSpan({
+          text: 'Specify which frontmatter properties contain your clipped URLs.'
+      });
+      el.createEl('br');
+      el.createSpan({text: '(comma separated)'});
+    }))
     .addText(text => text
       .setValue(this.plugin.settings.sourcePropertyName)
+      .setPlaceholder('e.g., source, url, link')
+      .then(textComponent => {
+        const inputEl = textComponent.inputEl;
+        let initialValue = this.plugin.settings.sourcePropertyName;
+      
+        inputEl.addEventListener('blur', async () => {
+          if (inputEl.value !== initialValue) {
+            initialValue = inputEl.value; // Update reference
+            this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+              if (leaf.view instanceof ClipperCatalogView) {
+                leaf.view.onOpen();
+              }
+            });
+          }
+        });
+      })
       .onChange(async (value) => {
         this.plugin.settings.sourcePropertyName = value;
         await this.plugin.saveSettings();
       }));
-    
+
+    new Setting(containerEl)
+      .setName('Show source domain below the title')
+      .setDesc('Display the website domain (e.g., wikipedia.org) beneath each note title in the catalog')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showClippedFrom)
+        .onChange(async (value) => {
+          this.plugin.settings.showClippedFrom = value;
+          await this.plugin.saveSettings();
+          // Refresh all clipper catalog views
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+            if (leaf.view) {
+              leaf.view.onResize();
+            }
+          });
+        }));
+
     new Setting(containerEl)
       .setName('Include frontmatter tags')
       .setDesc('Include tags from the frontmatter "tags" field')
@@ -162,14 +202,29 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .addText(text => text
         .setPlaceholder('e.g., read')
         .setValue(this.plugin.settings.readPropertyName)
+        .then(textComponent => {
+          const inputEl = textComponent.inputEl;
+          let initialValue = this.plugin.settings.readPropertyName;
+        
+          inputEl.addEventListener('blur', async () => {
+            if (inputEl.value !== initialValue) {
+              initialValue = inputEl.value; // Update reference
+              this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+                if (leaf.view instanceof ClipperCatalogView) {
+                  leaf.view.onOpen();
+                }
+              });
+            }
+          });
+        })
         .onChange(async (value) => {
           this.plugin.settings.readPropertyName = value;
           await this.plugin.saveSettings();
         }));
 
     new Setting(containerEl)
-      .setName('Use a compatible checkbox')
-      .setDesc('Experimental: Enable for better compatibility with themes where the custom checkbox is not visible.')
+      .setName('Experimental: Use a compatible checkbox')
+      .setDesc('Enable for better compatibility with themes where the custom checkbox is not visible.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.useNativeCheckbox)
         .onChange(async (value) => {
