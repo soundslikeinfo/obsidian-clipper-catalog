@@ -67,10 +67,9 @@
       max-width: 500px;
       margin-right: 2em;
     }
-
+    
     textarea, 
-    input[type="text"], 
-    input[type="password"], 
+    input[type="text"],
     select {
       background-color: var(--background-modifier-form-field);
       border: 1px solid var(--background-modifier-border);
@@ -78,11 +77,11 @@
       padding: 6px 12px;
       color: var(--text-normal);
       transition: all 200ms ease-in-out;
+      
     }
 
     textarea:focus,
     input[type="text"]:focus,
-    input[type="password"]:focus,
     select:focus {
       border-color: var(--interactive-accent);
       box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
@@ -94,11 +93,10 @@
       resize: vertical;
     }
 
-    input[type="text"],
-    input[type="password"] {
+    input[type="text"]{
       height: 32px;
       width: 100%;
-      max-width: 150px;
+      max-width: 300px;
     }
 
     select {

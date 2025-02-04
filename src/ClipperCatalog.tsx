@@ -137,6 +137,12 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       const articleFiles: Article[] = [];
       const files = app.vault.getMarkdownFiles();
   
+      // Split the sourcePropertyName into an array of property names
+      const propertyNames = plugin.settings.sourcePropertyName
+        .split(',')
+        .map(name => name.trim())
+        .filter(Boolean);
+      
       for (const file of files) {
         try {
           if (isPathIgnored(file.parent?.path || '')) {
@@ -146,8 +152,17 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           const metadata = app.metadataCache.getFileCache(file);
           
           if (metadata?.frontmatter) {
-            const source = metadata.frontmatter[plugin.settings.sourcePropertyName];
+            let source: string | undefined;
             const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
+
+            // Try each property name until we find one with a value
+            for (const propName of propertyNames) {
+              const value = metadata.frontmatter[propName];
+              if (value) {
+                source = value;
+                break; // Use the first valid URL we find
+              }
+            }
 
             if (source) {
               const content = await app.vault.read(file);

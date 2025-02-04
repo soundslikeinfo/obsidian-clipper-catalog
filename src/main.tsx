@@ -116,9 +116,33 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
     .setName('Property name')
-    .setDesc('Specify which frontmatter property contains your clipped URLs (e.g., "source", "url", "link").')
+    .setDesc(createFragment(el => {
+      el.createSpan({
+          text: 'Specify which frontmatter properties contain your clipped URLs.'
+      });
+      el.createEl('br');
+      el.createSpan({text: '(comma separated)'});
+    }))
     .addText(text => text
       .setValue(this.plugin.settings.sourcePropertyName)
+      .setPlaceholder('e.g., source, url, link')
+      .then(textComponent => {
+        // Make the input field wider
+        const inputEl = textComponent.inputEl;
+        inputEl.style.width = '300px';
+        inputEl.style.maxWidth = '100%';
+        
+        // Add blur event listener
+        inputEl.addEventListener('blur', async () => {
+          // Refresh all articles
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+            if (leaf.view instanceof ClipperCatalogView) {
+              // Force reload articles
+              leaf.view.onOpen();
+            }
+          });
+        });
+      })
       .onChange(async (value) => {
         this.plugin.settings.sourcePropertyName = value;
         await this.plugin.saveSettings();
