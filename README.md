@@ -99,10 +99,6 @@ Yes! Use the advanced search options to exclude specific directories from your c
 
 - For bugs or feature requests, please [open an issue](https://github.com/soundslikeinfo/obsidian-clipper-catalog/issues)
 
-## Privacy
-
-This plugin sends article content to OpenAI's API for processing. Please review OpenAI's privacy policy and ensure you're comfortable with their data handling practices.
-
 ## Contributing
 
 1. Fork the repository
