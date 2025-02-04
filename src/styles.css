@@ -341,10 +341,8 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   color: var(--text-accent);
   font-size: 0.75rem;
   padding: 0.25rem 0;
-  transition: opacity 0.2s ease;
   
   &:hover {
-    opacity: 0.8;
     text-decoration: underline;
   }
 }

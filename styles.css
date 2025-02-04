@@ -27,6 +27,10 @@
   margin-left: 0.5rem;
 }
 
+.cc-ml-6 {
+  margin-left: 1.5rem;
+}
+
 .cc-mt-1 {
   margin-top: 0.25rem;
 }
@@ -87,16 +91,8 @@
   width: 1rem;
 }
 
-.cc-w-\[10\%\] {
-  width: 10%;
-}
-
 .cc-w-\[15\%\] {
   width: 15%;
-}
-
-.cc-w-\[20\%\] {
-  width: 20%;
 }
 
 .cc-w-\[22\%\] {
@@ -311,6 +307,10 @@
 
 .cc-font-medium {
   font-weight: 500;
+}
+
+.cc-italic {
+  font-style: italic;
 }
 
 .cc-text-blue-600 {
@@ -740,9 +740,7 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   color: var(--text-accent);
   font-size: 0.75rem;
   padding: 0.25rem 0;
-  transition: opacity 0.2s ease;
   &:hover {
-    opacity: 0.8;
     text-decoration: underline;
   }
 }

@@ -11,7 +11,7 @@ interface ClipperCatalogProps {
 
 interface Article {
   title: string;
-  url: string;
+  urls: { [key: string]: string };
   path: string;
   date: number;
   tags: string[];
@@ -32,6 +32,24 @@ interface AdvancedSettings {
   isExpanded: boolean;
 }
 
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const extractDomain = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+};
+
 const ArticleTitle = ({ file, content, title }: { file: TFile, content: string, title: string }) => {
   const isUntitled = /^Untitled( \d+)?$/.test(file.basename);
   const headerMatch = content.match(/^#+ (.+)$/m);
@@ -46,6 +64,26 @@ const ArticleTitle = ({ file, content, title }: { file: TFile, content: string, 
   }
   
   return <span>{file.basename}</span>;
+};
+
+const processFrontmatterTags = (frontmatter: any, settings: any): string[] => {
+  if (!settings.includeFrontmatterTags || !frontmatter.tags) return [];
+  
+  const tags = Array.isArray(frontmatter.tags) 
+    ? frontmatter.tags 
+    : frontmatter.tags.split(',').map((t: string) => t.trim());
+    
+  return tags
+    .map((tag: string) => tag.startsWith('#') ? tag.slice(1) : tag)
+    .filter(Boolean);
+};
+
+const processContentTags = (tags: any): string[] => {
+  if (!tags) return [];
+  return tags
+    .map((tag: any) => typeof tag === 'string' ? tag : tag.tag)
+    .map((tag: string) => tag.startsWith('#') ? tag.slice(1) : tag)
+    .filter(Boolean);
 };
 
 const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
@@ -136,82 +174,45 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     try {
       const articleFiles: Article[] = [];
       const files = app.vault.getMarkdownFiles();
-  
-      // Split the sourcePropertyName into an array of property names
       const propertyNames = plugin.settings.sourcePropertyName
         .split(',')
         .map(name => name.trim())
         .filter(Boolean);
-      
+  
       for (const file of files) {
         try {
-          if (isPathIgnored(file.parent?.path || '')) {
-            continue;
-          }
+          if (isPathIgnored(file.parent?.path || '')) continue;
   
           const metadata = app.metadataCache.getFileCache(file);
-          
-          if (metadata?.frontmatter) {
-            let source: string | undefined;
-            const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
-
-            // Try each property name until we find one with a value
-            for (const propName of propertyNames) {
-              const value = metadata.frontmatter[propName];
-              if (value) {
-                source = value;
-                break; // Use the first valid URL we find
-              }
-            }
-
-            if (source) {
-              const content = await app.vault.read(file);
-              let frontmatterTags: string[] = [];
-              let contentTags: string[] = [];
+          if (!metadata?.frontmatter) continue;
   
-              // Process frontmatter tags
-              if (plugin.settings.includeFrontmatterTags && metadata.frontmatter.tags) {
-                if (Array.isArray(metadata.frontmatter.tags)) {
-                  frontmatterTags = metadata.frontmatter.tags;
-                } else if (typeof metadata.frontmatter.tags === 'string') {
-                  frontmatterTags = metadata.frontmatter.tags
-                    .split(',')
-                    .map(tag => tag.trim());
-                }
-                // Clean up frontmatter tags
-                frontmatterTags = frontmatterTags
-                  .map(tag => tag.startsWith('#') ? tag.slice(1) : tag)
-                  .filter(Boolean);
-              }
+          const urls: { [key: string]: string } = {};
+          const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
   
-              // Process content tags from metadata cache
-              if (metadata.tags) {
-                contentTags = metadata.tags
-                  .map(tag => typeof tag === 'string' ? tag : tag.tag)
-                  .map(tag => tag.startsWith('#') ? tag.slice(1) : tag)
-                  .filter(Boolean);
-              }
+          // Collect URLs from specified properties
+          for (const propName of propertyNames) {
+            const value = metadata.frontmatter[propName];
+            if (value) urls[propName] = value;
+          }
   
-              // Remove duplicates within each array
-              frontmatterTags = [...new Set(frontmatterTags)];
-              contentTags = [...new Set(contentTags)];
+          if (Object.keys(urls).length > 0) {
+            const content = await app.vault.read(file);
+            const frontmatterTags = processFrontmatterTags(metadata.frontmatter, plugin.settings);
+            const contentTags = processContentTags(metadata.tags);
+            const allTags = [...new Set([...frontmatterTags, ...contentTags])];
   
-              // Create combined tags array for search functionality
-              const allTags = [...frontmatterTags, ...contentTags];
-  
-              articleFiles.push({
-                title: file.basename,
-                url: source,
-                path: file.path,
-                date: file.stat.ctime,
-                tags: allTags, // Keep combined tags for search
-                frontmatterTags,
-                contentTags,
-                basename: file.basename,
-                content: content,
-                read
-              });
-            }
+            articleFiles.push({
+              title: file.basename,
+              urls, // Changed from url: source
+              path: file.path,
+              date: file.stat.ctime,
+              tags: allTags,
+              frontmatterTags,
+              contentTags,
+              basename: file.basename,
+              content,
+              read
+            });
           }
         } catch (error) {
           console.error(`Error processing file ${file.path}:`, error);
@@ -227,6 +228,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       setIsLoading(false);
     }
   }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories, plugin.settings]);
+  
 
   // Initial load
   useEffect(() => {
@@ -531,9 +533,9 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
             )}
             <col className="cc-w-[30%]" />
             <col className="cc-w-[15%] cc-narrow-view-hidden" />
-            <col className="cc-w-[20%] cc-narrow-view-hidden" />
+            <col className="cc-w-[15%] cc-narrow-view-hidden" />
             <col className="cc-w-[22%]" />
-            <col className="cc-w-[10%]" />
+            <col className="cc-w-[15%]" />
           </colgroup>
           <thead>
             <tr className="clipper-catalog-header-row">
@@ -622,36 +624,41 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   </td>
                 )}
                 <td className="cc-px-4 cc-py-2">
-                  <span
-                    onClick={(event) => openArticle(article.path, event)}
-                    className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title ${
-                      (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
-                    }`}
-                  >
-                    <svg 
-                      className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
+                  <div className="cc-flex cc-flex-col">
+                    <span
+                      onClick={(event) => openArticle(article.path, event)}
+                      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title ${
+                        (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
+                      }`}
                     >
-                      <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    
-                    {(() => {
-                      const abstractFile = app.vault.getAbstractFileByPath(article.path);
-                      if (abstractFile instanceof TFile) {
-                        return (
-                          <ArticleTitle 
-                            file={abstractFile}
-                            content={article.content || ''}
-                            title={article.title}
-                          />
-                        );
-                      }
-                      return <span>{article.title}</span>;
-                    })()}
-                  </span>
+                      <svg 
+                        className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
+                        fill="none" 
+                        strokeWidth="2" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <ArticleTitle 
+                        file={app.vault.getAbstractFileByPath(article.path) as TFile}
+                        content={article.content || ''}
+                        title={article.title}
+                      />
+                    </span>
+                    {plugin.settings.showClippedFrom && Object.values(article.urls)
+                      .map(url => isValidUrl(url) ? extractDomain(url) : null)
+                      .filter(Boolean)
+                      .length > 0 && (
+                        <span className="cc-text-sm cc-text-muted cc-ml-6 cc-italic">
+                          Clipped from {Object.values(article.urls)
+                            .map(url => isValidUrl(url) ? extractDomain(url) : null)
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                      )
+                    }
+                  </div>
                 </td>
                 <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
                   {formatDate(article.date)}
@@ -691,17 +698,37 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   </div>
                 </td>
                 <td className="cc-px-4 cc-py-2">
-                <a 
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
-                  title={`Go to ${article.url}`}
-                >
-                  <Link className="cc-h-3 cc-w-3" />
-                  <span className="cc-text-xs">Visit</span>
-                </a>
-              </td>
+                  <div className="cc-flex cc-flex-col cc-gap-1">
+                    {Object.entries(article.urls).map(([propName, url], index, array) => (
+                      isValidUrl(url) ? (
+                        <div key={propName} className="cc-flex cc-flex-col">
+                        <a 
+                          key={propName}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
+                          title={`Go to ${url}`}
+                        >
+                          <Link className="cc-h-3 cc-w-3" />
+                          <span className="cc-text-xs">
+                            {array.length === 1 ? 'Visit' : propName}
+                          </span>
+                        </a>
+                        </div>
+                      ) : (
+                        <span 
+                          key={propName}
+                          className="cc-inline-flex cc-items-center cc-gap-0.5 cc-text-error cc-opacity-50"
+                          title="Invalid URL"
+                        >
+                          <X className="cc-h-3 cc-w-3" />
+                          <span className="cc-text-xs">{propName}: Invalid URL</span>
+                        </span>
+                      )
+                    ))}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

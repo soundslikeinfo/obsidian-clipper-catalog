@@ -7,6 +7,7 @@ interface ObsidianClipperCatalogSettings {
   sourcePropertyName: string;
   ignoredDirectories: string[];
   isAdvancedSettingsExpanded: boolean;
+  showClippedFrom: boolean;
   includeFrontmatterTags: boolean;
   openInSameLeaf: boolean;
   readPropertyName: string;
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   sourcePropertyName: 'source',
   ignoredDirectories: [],
   isAdvancedSettingsExpanded: false,
+  showClippedFrom: true,
   includeFrontmatterTags: true,
   openInSameLeaf: false,
   readPropertyName: '',
@@ -115,7 +117,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
     containerEl.addClass('clipper-catalog-settings');
 
     new Setting(containerEl)
-    .setName('Property name')
+    .setName('Property name(s)')
     .setDesc(createFragment(el => {
       el.createSpan({
           text: 'Specify which frontmatter properties contain your clipped URLs.'
@@ -127,11 +129,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.sourcePropertyName)
       .setPlaceholder('e.g., source, url, link')
       .then(textComponent => {
-        // Make the input field wider
         const inputEl = textComponent.inputEl;
-        inputEl.style.width = '300px';
-        inputEl.style.maxWidth = '100%';
-        
         // Add blur event listener
         inputEl.addEventListener('blur', async () => {
           // Refresh all articles
@@ -147,7 +145,23 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
         this.plugin.settings.sourcePropertyName = value;
         await this.plugin.saveSettings();
       }));
-    
+
+    new Setting(containerEl)
+      .setName('Show source domain below the title')
+      .setDesc('Display the website domain (e.g., wikipedia.org) beneath each note title in the catalog')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showClippedFrom)
+        .onChange(async (value) => {
+          this.plugin.settings.showClippedFrom = value;
+          await this.plugin.saveSettings();
+          // Refresh all clipper catalog views
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+            if (leaf.view) {
+              leaf.view.onResize();
+            }
+          });
+        }));
+
     new Setting(containerEl)
       .setName('Include frontmatter tags')
       .setDesc('Include tags from the frontmatter "tags" field')
@@ -192,8 +206,8 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Use a compatible checkbox')
-      .setDesc('Experimental: Enable for better compatibility with themes where the custom checkbox is not visible.')
+      .setName('Experimental: Use a compatible checkbox')
+      .setDesc('Enable for better compatibility with themes where the custom checkbox is not visible.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.useNativeCheckbox)
         .onChange(async (value) => {
