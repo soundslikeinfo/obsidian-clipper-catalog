@@ -573,7 +573,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   <td className="cc-px-4 cc-py-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
-                      className="clipper-catalog-checkbox"
+                      className={plugin.settings.useNativeCheckbox ? 'clipper-catalog-compatible-checkbox' : 'clipper-catalog-checkbox'}
                       checked={article.read === true}
                       onChange={async (e) => {
                         const isChecked = e.target.checked;

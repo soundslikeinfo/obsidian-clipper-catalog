@@ -226,6 +226,37 @@
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
+/* Compatibility for themes */
+/* Dark Theme */
+.theme-dark{
+  input.clipper-catalog-checkbox[type=checkbox]:checked:after{
+    background-color: transparent;
+  }
+}
+
+/* Compatible checkbox enhancements */
+.clipper-catalog-compatible-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  border: 1px solid var(--checkbox-border-color);
+  border-radius: 3px;
+  background-color: var(--background-primary);
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+}
+
+.clipper-catalog-compatible-checkbox:checked {
+  background-color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
+  /* --checkbox-color: var(--checkbox-color); */
+  background-color: var(--interactive-accent);
+}
+
 /* Tag styles */
 .clipper-catalog-tag,
 .clipper-catalog-frontmatter-tag {

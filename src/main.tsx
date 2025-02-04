@@ -10,6 +10,7 @@ interface ObsidianClipperCatalogSettings {
   includeFrontmatterTags: boolean;
   openInSameLeaf: boolean;
   readPropertyName: string;
+  useNativeCheckbox: boolean;
 }
 
 interface ObsidianSettings {
@@ -26,7 +27,8 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   isAdvancedSettingsExpanded: false,
   includeFrontmatterTags: true,
   openInSameLeaf: false,
-  readPropertyName: ''
+  readPropertyName: '',
+  useNativeCheckbox: false
 }
 
 export default class ObsidianClipperCatalog extends Plugin {
@@ -123,14 +125,21 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       }));
     
     new Setting(containerEl)
-    .setName('Include frontmatter tags')
-    .setDesc('Include tags from the frontmatter "tags" field')
-    .addToggle(toggle => toggle
-      .setValue(this.plugin.settings.includeFrontmatterTags)
-      .onChange(async (value) => {
-        this.plugin.settings.includeFrontmatterTags = value;
-        await this.plugin.saveSettings();
-      }));
+      .setName('Include frontmatter tags')
+      .setDesc('Include tags from the frontmatter "tags" field')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeFrontmatterTags)
+        .onChange(async (value) => {
+          this.plugin.settings.includeFrontmatterTags = value;
+          await this.plugin.saveSettings();
+          // Refresh all articles
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+            if (leaf.view instanceof ClipperCatalogView) {
+              // Force reload articles
+              leaf.view.onOpen();
+            }
+          });
+        }));
 
     new Setting(containerEl)
       .setName('Open notes in same window')
@@ -157,6 +166,21 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
           this.plugin.settings.readPropertyName = value;
           await this.plugin.saveSettings();
         }));
-        
-  }
+
+    new Setting(containerEl)
+      .setName('Use a compatible checkbox')
+      .setDesc('Experimental: Enable for better compatibility with themes where the custom checkbox is not visible.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.useNativeCheckbox)
+        .onChange(async (value) => {
+          this.plugin.settings.useNativeCheckbox = value;
+          await this.plugin.saveSettings();
+          // Refresh all clipper catalog views
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_CLIPPER_CATALOG).forEach(leaf => {
+            if (leaf.view) {
+              leaf.view.onResize();
+            }
+          });
+        }));
+      }
 }
