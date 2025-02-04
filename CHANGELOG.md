@@ -1,5 +1,18 @@
 ## Changelog
 
+### [1.1.0] - 2025-02-04 
+- Introduce **Checkboxes** - Mark clippings as *read* or *completed*, found in preferences for **Read status**
+	- Experimental: Change the checkbox styles if loading an incompatible theme
+		- Turn this on for Cupertino theme
+- Link column's text now show the property name instead of generic text
+- Multiple "source" properties, comma separated in the settings (source, url, link)
+	- Shows each link if there are more than one url properties (One url entered per property)
+- Toggle domain name hint underneath note title, on by default
+- Note icon refreshed
+- Change **Note Title** column to just **Note**
+- Settings update no longer requires clicking on *refresh list*
+- Responsive adjustments
+
 ### [1.0.9] - 2025-02-03
 - Added setting that can open notes in the same window, to help those who use mobile navigation.
 
