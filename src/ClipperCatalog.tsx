@@ -19,6 +19,7 @@ interface Article {
   contentTags: string[];
   basename: string;
   content: string;
+  read?: boolean;
 }
 
 interface SortConfig {
@@ -146,7 +147,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           
           if (metadata?.frontmatter) {
             const source = metadata.frontmatter[plugin.settings.sourcePropertyName];
-            
+            const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
+
             if (source) {
               const content = await app.vault.read(file);
               let frontmatterTags: string[] = [];
@@ -191,7 +193,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 frontmatterTags,
                 contentTags,
                 basename: file.basename,
-                content: content
+                content: content,
+                read
               });
             }
           }
@@ -508,14 +511,22 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       <div className="cc-overflow-x-auto cc-min-h-[120px]">
         <table className="cc-w-full cc-text-sm">
           <colgroup>
+            {plugin.settings.readPropertyName && (
+              <col className="cc-w-[3%]" />
+            )}
             <col className="cc-w-[30%]" />
             <col className="cc-w-[15%] cc-narrow-view-hidden" />
-            <col className="cc-w-[22%] cc-narrow-view-hidden" />
-            <col className="cc-w-[20%]" />
-            <col className="cc-w-[13%]" />
+            <col className="cc-w-[20%] cc-narrow-view-hidden" />
+            <col className="cc-w-[22%]" />
+            <col className="cc-w-[10%]" />
           </colgroup>
           <thead>
             <tr className="clipper-catalog-header-row">
+              {plugin.settings.readPropertyName && (
+                <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
+                  {/* Read */}
+                </th>
+              )}
               <th 
                 onClick={() => handleSort('title')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
@@ -558,10 +569,49 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           <tbody>
             {filteredArticles.map((article) => (
               <tr key={article.path} className="clipper-catalog-row">
+                {plugin.settings.readPropertyName && (
+                  <td className="cc-px-4 cc-py-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className={plugin.settings.useNativeCheckbox ? 'clipper-catalog-compatible-checkbox' : 'clipper-catalog-checkbox'}
+                      checked={article.read === true}
+                      onChange={async (e) => {
+                        const isChecked = e.target.checked;
+                        const file = app.vault.getAbstractFileByPath(article.path);
+                        if (!(file instanceof TFile)) return;
+                      
+                        try {
+                          setArticles(prev => prev.map(a => 
+                            a.path === article.path ? {...a, read: isChecked} : a
+                          ));
+                      
+                          const metadata = app.metadataCache.getFileCache(file);
+                          const content = await app.vault.read(file);
+                      
+                          if (!metadata?.frontmatter) {
+                            const newContent = `---\n${plugin.settings.readPropertyName}: ${isChecked}\n---\n${content}`;
+                            await app.vault.modify(file, newContent);
+                          } else {
+                            await app.fileManager.processFrontMatter(file, (frontmatter) => {
+                              frontmatter[plugin.settings.readPropertyName] = isChecked;
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Error:', error);
+                          setArticles(prev => prev.map(a => 
+                            a.path === article.path ? {...a, read: !isChecked} : a
+                          ));
+                        }
+                      }}
+                    />
+                  </td>
+                )}
                 <td className="cc-px-4 cc-py-2">
                   <span
                     onClick={(event) => openArticle(article.path, event)}
-                    className="cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title"
+                    className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-transition-colors cc-min-h-[1.5rem] clipper-catalog-title ${
+                      (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
+                    }`}
                   >
                     <svg 
                       className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
@@ -572,6 +622,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     >
                       <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
+                    
                     {(() => {
                       const abstractFile = app.vault.getAbstractFileByPath(article.path);
                       if (abstractFile instanceof TFile) {
