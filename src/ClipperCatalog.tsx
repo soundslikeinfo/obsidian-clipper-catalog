@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, HelpCircle, Tag } from 'lucide-react';
-import { TFile, App, ItemView } from 'obsidian';
+import { TFile, App, MarkdownRenderer, ItemView } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
 import { VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
 
@@ -306,6 +306,24 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
   const openArticle = (path: string, event: React.MouseEvent) => {
     const file = app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) return;
+
+            // Check if HoverEditor plugin exists and Shift key is pressed
+            const hoverEditorPlugin = (app as any).plugins.plugins["obsidian-hover-editor"];
+            if (event.shiftKey && hoverEditorPlugin) {
+                // Create a new PopoverState
+                const popoverState = {
+                    file: file,
+                    leaf: app.workspace.activeLeaf,
+                    cursor: { line: 0, ch: 0 },
+                    focus: true
+                };
+                
+                // Trigger the hover-editor:open-editor event
+                app.workspace.trigger('hover-editor:open-editor', popoverState);
+                return;
+            }
+
     if (file instanceof TFile) {
         const newLeaf = event.ctrlKey || event.metaKey; // Check for Ctrl (Windows) or Command (Mac)
 
@@ -633,44 +651,98 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   </td>
                 )}
                 <td className="cc-px-4 cc-py-2">
-                  <div className="cc-flex cc-flex-col">
-                    <span
-                      onClick={(event) => openArticle(article.path, event)}
-                      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem] clipper-catalog-title ${
-                        (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
-                      }`}
-                    >
-                      <svg 
-                        className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
-                        fill="none" 
-                        strokeWidth="2" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        <path d="M14 2v6h6" />
-                        <path d="M5 9h14" strokeWidth="1" />
-                      </svg>
-                      <ArticleTitle 
-                        file={app.vault.getAbstractFileByPath(article.path) as TFile}
-                        content={article.content || ''}
-                        title={article.title}
-                      />
-                    </span>
-                    {plugin.settings.showClippedFrom && Object.values(article.urls)
-                      .map(url => isValidUrl(url) ? extractDomain(url) : null)
-                      .filter(Boolean)
-                      .length > 0 && (
-                        <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
-                          Clipped from {Object.values(article.urls)
-                            .map(url => isValidUrl(url) ? extractDomain(url) : null)
-                            .filter(Boolean)
-                            .join(', ')}
-                        </span>
-                      )
-                    }
-                  </div>
-                </td>
+  <div className="cc-flex cc-flex-col">
+    <a
+      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem] clipper-catalog-title internal-link markdown-internal-link ${
+        (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
+      }`}
+      data-href={article.path}
+      href={article.path}
+      data-type="link"
+      onClick={(event) => {
+        event.preventDefault();
+        const targetFile = app.vault.getAbstractFileByPath(article.path);
+        if (targetFile instanceof TFile) {
+          const leaf = app.workspace.getLeaf(
+            event.ctrlKey || event.metaKey
+          );
+          leaf.openFile(targetFile, { active: true });
+        }
+      }}
+      onMouseEnter={(event) => {
+        const targetFile = app.vault.getAbstractFileByPath(article.path);
+        if (targetFile instanceof TFile) {
+          const cache = app.metadataCache.getFileCache(targetFile);
+          const pos = { line: 0, col: 0, offset: 0 };
+          
+          app.workspace.trigger('hover-link', {
+            event,
+            source: article.path,
+            hoverParent: event.currentTarget,
+            targetEl: event.currentTarget,
+            linktext: article.path,
+            sourcePath: article.path,
+            mousePosition: { x: event.clientX, y: event.clientY },
+            cache,
+            position: pos
+          });
+        }
+      }}
+      onMouseMove={(event) => {
+        // Check if modifier key is pressed (Cmd on Mac, Ctrl on Windows)
+        if (event.metaKey || event.ctrlKey) {
+          const targetFile = app.vault.getAbstractFileByPath(article.path);
+          if (targetFile instanceof TFile) {
+            const cache = app.metadataCache.getFileCache(targetFile);
+            const pos = { line: 0, col: 0, offset: 0 };
+            
+            app.workspace.trigger('hover-link', {
+              event,
+              source: article.path,
+              hoverParent: event.currentTarget,
+              targetEl: event.currentTarget,
+              linktext: article.path,
+              sourcePath: article.path,
+              mousePosition: { x: event.clientX, y: event.clientY },
+              cache,
+              position: pos
+            });
+          }
+        }
+      }}
+    >
+      <svg 
+        className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
+        fill="none" 
+        strokeWidth="2" 
+        viewBox="0 0 24 24" 
+        stroke="currentColor"
+      >
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <path d="M14 2v6h6" />
+        <path d="M5 9h14" strokeWidth="1" />
+      </svg>
+      <ArticleTitle 
+        file={app.vault.getAbstractFileByPath(article.path) as TFile}
+        content={article.content || ''}
+        title={article.title}
+      />
+    </a>
+    {plugin.settings.showClippedFrom && Object.values(article.urls)
+      .map(url => isValidUrl(url) ? extractDomain(url) : null)
+      .filter(Boolean)
+      .length > 0 && (
+        <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
+          Clipped from {Object.values(article.urls)
+            .map(url => isValidUrl(url) ? extractDomain(url) : null)
+            .filter(Boolean)
+            .join(', ')}
+        </span>
+      )
+    }
+  </div>
+</td>
+
                 <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
                   {formatDate(article.date)}
                 </td>
