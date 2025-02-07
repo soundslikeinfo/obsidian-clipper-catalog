@@ -420,12 +420,6 @@
   }
 }
 
-/* Text utilities */
-
-.text-sm {
-  font-size: .75rem;
-}
-
 .clipper-catalog-plugin {
   /* Add minimal reset only for our plugin elements */
   & * {
@@ -594,13 +588,32 @@
   top: 30%;
 }
 
-.clipper-catalog-title {
-  color: var(--text-normal);
-  .cc-font-bold {
-    font-weight: 600;
+/* Title link styles */
+
+.clipper-catalog-title-link {
+  padding: 0;
+  margin: 0;
+  color: var(--link-color);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  &:hover {
+    color: var(--link-color-hover, var(--link-color));
+    text-decoration: underline;
   }
-  + span{
-    color: var(--text-muted);
+  &.cc-font-bold {
+    font-weight: var(--font-bold, 600);
+  }
+}
+
+/* Container spacing */
+
+.clipper-catalog-content {
+  .cc-flex.cc-items-center{
+    gap: 0.5rem;
   }
 }
 
@@ -629,17 +642,18 @@
   margin-inline-end: 0 !important;
 }
 
-.clipper-catalog-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
-.clipper-catalog-checkbox:checked::before {
-  content: "";
-  width: 10px;
-  height: 10px;
-  background-color: var(--text-on-accent, white);
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+.clipper-catalog-checkbox{
+  &:checked {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    &::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      background-color: var(--text-on-accent, white);
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+  }
 }
 
 /* Compatibility for themes */

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, HelpCircle, Tag } from 'lucide-react';
-import { TFile, App, ItemView } from 'obsidian';
+import { TFile, App, Menu, ItemView } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
-import { VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
+import { ClipperCatalogView, VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
 
 interface ClipperCatalogProps {
   app: App;
@@ -100,6 +100,39 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     isExpanded: plugin.settings.isAdvancedSettingsExpanded
   });
   const [newDirectory, setNewDirectory] = useState('');
+
+    // Add state to track if we're currently hovering
+  const [hoveredElement, setHoveredElement] = useState<{
+    element: HTMLElement;
+    path: string;
+  } | null>(null);
+
+  // Add effect to listen for CMD key while hovering
+  useEffect(() => {
+    if (!hoveredElement) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        // Check if hover editor plugin exists with proper type casting
+        if (!(app as any).plugins?.plugins["obsidian-hover-editor"]) return;
+
+        const targetFile = app.vault.getAbstractFileByPath(hoveredElement.path);
+        if (targetFile instanceof TFile) {
+          app.workspace.trigger('hover-link', {
+            event: e,
+            source: 'editor',
+            hoverParent: hoveredElement.element,
+            targetEl: hoveredElement.element,
+            linktext: hoveredElement.path,
+            sourcePath: hoveredElement.path || "",
+          });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hoveredElement]);
 
   // Handle resize observer
   useEffect(() => {
@@ -304,35 +337,52 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     return null;
   };
 
-  const openArticle = (path: string, event: React.MouseEvent) => {
-    const file = app.vault.getAbstractFileByPath(path);
-    if (file instanceof TFile) {
-        const newLeaf = event.ctrlKey || event.metaKey; // Check for Ctrl (Windows) or Command (Mac)
-
-        if (plugin.settings.openInSameLeaf) {
-            // Get the active leaf
-            const activeLeaf = app.workspace.activeLeaf;
-
-            if (newLeaf) {
-                // Open in a new leaf
-                const leaf = app.workspace.getLeaf(false);
-                leaf.openFile(file);
-            } else {
-                // Open in the active leaf
-                if (activeLeaf?.getViewState().type === VIEW_TYPE_CLIPPER_CATALOG) {
-                    activeLeaf.openFile(file);
-                } else {
-                    const leaf = app.workspace.getLeaf(false);
-                    leaf.openFile(file);
-                }
-            }
-        } else {
-            // Original behavior - When not using the same leaf setting, just open in a new leaf
-            const leaf = app.workspace.getLeaf(false);
-            leaf.openFile(file);
-        }
+  const openArticle = async (path: string, event: React.MouseEvent) => {
+    // Prevent text selection when shift-clicking
+    if (event.shiftKey) {
+      event.preventDefault();
     }
-};
+  
+    const file = app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) return;
+  
+    // If shift is pressed, open in new window using Obsidian's native window creation
+    if (event.shiftKey) {
+      const leaf = app.workspace.openPopoutLeaf();
+      await leaf.openFile(file);
+      return;
+    }
+  
+    // Check for Ctrl (Windows) or Command (Mac)
+    const newLeaf = event.ctrlKey || event.metaKey;
+  
+    try {
+      if (plugin.settings.openInSameLeaf && !newLeaf) {
+        // Get the most suitable leaf
+        const currentView = app.workspace.getActiveViewOfType(ClipperCatalogView);
+        if (currentView) {
+          // If we're in the catalog view, reuse its leaf
+          await currentView.leaf.openFile(file);
+        } else {
+          // If we're not in the catalog view, use the active leaf
+          const leaf = app.workspace.getLeaf();
+          await leaf.openFile(file);
+        }
+      } else {
+        // Open in a new tab when either:
+        // 1. openInSameLeaf is false, or
+        // 2. Ctrl/Cmd is pressed
+        const leaf = app.workspace.getLeaf('tab');
+        await leaf.openFile(file);
+      }
+    } catch (error) {
+      console.error('Error opening file:', error);
+      // Fallback to opening in a new leaf if something goes wrong
+      const leaf = app.workspace.getLeaf('tab');
+      await leaf.openFile(file);
+    }
+  };
+  
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -634,11 +684,121 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 )}
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-flex-col">
-                    <span
+                    <div 
+                      className="cc-flex cc-items-center cc-cursor-pointer cc-gap-2 cc-min-h-[1.5rem]"
                       onClick={(event) => openArticle(article.path, event)}
-                      className={`cc-flex cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem] clipper-catalog-title ${
-                        (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
-                      }`}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        const menu = new Menu();
+
+                        menu.addItem((item) => {
+                          item
+                            .setTitle(`Open in new tab`)
+                            .setIcon("file-plus")
+                            .onClick(() => {
+                              const file = app.vault.getAbstractFileByPath(article.path);
+                              if (!(file instanceof TFile)) return;
+                              
+                              // Get a new leaf in tab mode
+                              const leaf = app.workspace.getLeaf('tab');
+                              
+                              // Open the file in the new leaf
+                              leaf.openFile(file);
+                            });
+                        });
+
+                        menu.addItem((item) => {
+                          item
+                            .setTitle(`Open in new window`)
+                            .setIcon("picture-in-picture-2")
+                            .onClick(() => {
+                              const file = app.vault.getAbstractFileByPath(article.path);
+                              if (!(file instanceof TFile)) return;
+                              
+                              const leaf = app.workspace.openPopoutLeaf();  // Create the popout window
+                              leaf.openFile(file);  // Open the file in the new leaf
+                            });
+                        });
+
+                        menu.addItem((item) => {
+                          item
+                            .setTitle(`Open to the right`)
+                            .setIcon("separator-vertical")
+                            .onClick(() => {
+                              const file = app.vault.getAbstractFileByPath(article.path);
+                              if (!(file instanceof TFile)) return;
+                              
+                              // Get a new leaf in the preferred direction
+                              const leaf = app.workspace.getLeaf('split', 'vertical');
+                              
+                              // Open the file in the new leaf
+                              leaf.openFile(file);
+                            });
+                        });
+
+                        if ((app as any).plugins?.plugins["obsidian-hover-editor"]) {
+                          menu.addItem((item) => {
+                            item
+                              .setTitle(`Open in Hover Editor`)
+                              .setIcon("arrow-up-right")
+                              .onClick(async () => {
+                                const file = app.vault.getAbstractFileByPath(article.path);
+                                if (!(file instanceof TFile)) return;
+                                
+                                // Get the hover editor plugin instance
+                                const hoverEditorPlugin = (app as any).plugins.plugins["obsidian-hover-editor"];
+                                
+                                // Create new leaf using the plugin's spawnPopover method
+                                const newLeaf = hoverEditorPlugin.spawnPopover();
+                                
+                                // Open the file in the new leaf
+                                await newLeaf.openFile(file);
+                                
+                                // Optional: Focus the new leaf
+                                app.workspace.setActiveLeaf(newLeaf, { focus: true });
+                              });
+                          });
+                        }
+
+                        menu.addSeparator();
+                        
+                        menu.addItem((item) => {
+                          item
+                            .setTitle("Copy full path")
+                            .setIcon("copy")
+                            .onClick(() => {
+                              navigator.clipboard.writeText(article.path);
+                            });
+                        });
+
+                        // Loop through all URLs in article.urls
+                        Object.entries(article.urls).forEach(([propName, url]) => {
+                          if (isValidUrl(url)) {
+                            menu.addSeparator();
+
+                            menu.addItem((item) => {
+                              item
+                                .setTitle(`Open ${propName} in browser`)
+                                .setIcon("globe")
+                                .onClick(() => {
+                                  window.open(url, '_blank');
+                                });
+                            });
+
+                            menu.addItem((item) => {
+                              item
+                                .setTitle(`Copy ${propName} ${propName === "url" ? '' : 'URL'}`)
+                                .setIcon("copy")
+                                .onClick(() => {
+                                  navigator.clipboard.writeText(url);
+                                });
+                            });
+                          }
+                        });
+                    
+                        // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
+                        menu.showAtMouseEvent(event.nativeEvent);
+                      }}
                     >
                       <svg 
                         className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
@@ -651,12 +811,53 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         <path d="M14 2v6h6" />
                         <path d="M5 9h14" strokeWidth="1" />
                       </svg>
-                      <ArticleTitle 
-                        file={app.vault.getAbstractFileByPath(article.path) as TFile}
-                        content={article.content || ''}
-                        title={article.title}
-                      />
-                    </span>
+                      
+                      {/* Title container - no hover events here */}
+                      <div className="cc-flex cc-items-center">
+                        {/* The actual hoverable link element */}
+                        <span 
+                          className={`clipper-catalog-title-link internal-link markdown-preview-view cc-text-sm ${
+                            (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
+                          }`}
+                          data-href={article.path}
+                          data-type="link"
+                          /* aria-label={article.title} */
+                          onMouseEnter={(event) => {
+                            setHoveredElement({
+                              element: event.currentTarget,
+                              path: article.path
+                            });
+
+                            if (event.metaKey || event.ctrlKey) {
+                              // Check if hover editor plugin exists with proper type casting
+                              if (!(app as any).plugins?.plugins["obsidian-hover-editor"]) return;
+                      
+                              const targetFile = app.vault.getAbstractFileByPath(article.path);
+                              if (targetFile instanceof TFile) {
+                                app.workspace.trigger('hover-link', {
+                                  event: event,
+                                  source: 'editor',
+                                  hoverParent: event.currentTarget,
+                                  targetEl: event.currentTarget,
+                                  linktext: article.path,
+                                  sourcePath: article.path || "",
+                                });
+                              }
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredElement(null);
+                          }}
+                        >
+                          <ArticleTitle 
+                            file={app.vault.getAbstractFileByPath(article.path) as TFile}
+                            content={article.content || ''}
+                            title={article.title}
+                          />
+                        </span>
+                      </div>
+                    </div>
+                    {/* "Clipped from" info - no hover events */}
                     {plugin.settings.showClippedFrom && Object.values(article.urls)
                       .map(url => isValidUrl(url) ? extractDomain(url) : null)
                       .filter(Boolean)
@@ -675,7 +876,26 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   {formatDate(article.date)}
                 </td>
                 <td className="cc-px-4 cc-py-2 clipper-catalog-muted cc-narrow-view-hidden">
+                  <span
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      const menu = new Menu();
+                      
+                      menu.addItem((item) => {
+                        item
+                          .setTitle("Copy path")
+                          .setIcon("copy")
+                          .onClick(() => {
+                            navigator.clipboard.writeText(article.path.split('/').slice(0, -1).join('/') || '/');
+                          });
+                      });
+
+                      // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
+                      menu.showAtMouseEvent(event.nativeEvent);
+                    }}
+                  >
                   {article.path.split('/').slice(0, -1).join('/') || '/'}
+                  </span>
                 </td>
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-gap-1 cc-flex-wrap cc-items-center">
@@ -687,6 +907,40 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             key={`fm-${i}`}
                             onClick={() => setSearchTerm(`#${tag}`)}
                             className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-frontmatter-tag"
+                            onContextMenu={(event) => {
+                              event.preventDefault();
+                              const menu = new Menu();
+
+                              menu.addItem((item) => {
+                                item
+                                  .setTitle("Frontmatter tag")
+                                  .setDisabled(true)
+                                  .setIcon("tag")
+                              });
+  
+                              menu.addSeparator();
+  
+                              menu.addItem((item) => {
+                                item
+                                  .setTitle("Search tag")
+                                  .setIcon("search")
+                                  .onClick(() => {
+                                    setSearchTerm(`#${tag}`)
+                                  });
+                              });
+
+                              menu.addItem((item) => {
+                                item
+                                  .setTitle("Copy tag")
+                                  .setIcon("copy")
+                                  .onClick(() => {
+                                    navigator.clipboard.writeText(tag);
+                                  });
+                              });
+      
+                              // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
+                              menu.showAtMouseEvent(event.nativeEvent);
+                            }}
                           >
                             {tag}
                           </span>
@@ -701,6 +955,40 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           key={`content-${i}`}
                           onClick={() => setSearchTerm(`#${tag}`)}
                           className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-tag"
+                          onContextMenu={(event) => {
+                            event.preventDefault();
+                            const menu = new Menu();
+
+                            menu.addItem((item) => {
+                              item
+                                .setTitle("Inline tag")
+                                .setDisabled(true)
+                                .setIcon("tag")
+                            });
+
+                            menu.addSeparator();
+
+                            menu.addItem((item) => {
+                              item
+                                .setTitle("Search tag")
+                                .setIcon("search")
+                                .onClick(() => {
+                                  setSearchTerm(`#${tag}`)
+                                });
+                            });
+
+                            menu.addItem((item) => {
+                              item
+                                .setTitle("Copy tag")
+                                .setIcon("copy")
+                                .onClick(() => {
+                                  navigator.clipboard.writeText(`#${tag}`);
+                                });
+                            });
+    
+                            // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
+                            menu.showAtMouseEvent(event.nativeEvent);
+                          }}
                         >
                           #{tag}
                         </span>
@@ -713,27 +1001,51 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     {Object.entries(article.urls).map(([propName, url], index, array) => (
                       isValidUrl(url) ? (
                         <div key={propName} className="cc-flex cc-flex-col">
-                        <a 
-                          key={propName}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => {
-                            // OnClick to open in external window, even with web viewer plugin enabled
-                            if (e.ctrlKey || e.metaKey) {
-                              e.preventDefault();
-                              // Expected to work in upcoming Obsidian version
-                              window.open(url, '_external');
-                            }
-                          }}
-                          className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
-                          title={`Go to ${url}`}
-                        >
-                          <Link className="cc-h-3 cc-w-3" />
-                          <span className="cc-text-sm">
-                            {array.length === 1 ? `${propName}` : propName}
-                          </span>
-                        </a>
+                          <a 
+                            key={propName}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onContextMenu={(event: React.MouseEvent<HTMLAnchorElement>) => {
+                              event.preventDefault();
+                              const menu = new Menu();
+
+                              menu.addItem((item) => {
+                                item
+                                  .setTitle(`Open ${propName} in browser`)
+                                  .setIcon("globe")
+                                  .onClick(() => {
+                                    window.open(url, '_blank');
+                                  });
+                              });
+
+                              menu.addItem((item) => {
+                                item
+                                  .setTitle(`Copy ${propName} ${propName === "url" ? '' : 'URL'}`)
+                                  .setIcon("copy")
+                                  .onClick(() => {
+                                    navigator.clipboard.writeText(url);
+                                  });
+                              });
+
+                              menu.showAtMouseEvent(event.nativeEvent);
+                            }}
+                            onClick={(e) => {
+                              // OnClick to open in external window, even with web viewer plugin enabled
+                              if (e.ctrlKey || e.metaKey) {
+                                e.preventDefault();
+                                // Expected to work in upcoming Obsidian version
+                                window.open(url, '_external');
+                              }
+                            }}
+                            className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
+                            aria-label={`Go to ${url}`}
+                          >
+                            <Link className="cc-h-3 cc-w-3" />
+                            <span className="cc-text-sm">
+                              {array.length === 1 ? `${propName}` : propName}
+                            </span>
+                          </a>
                         </div>
                       ) : (
                         <span 
