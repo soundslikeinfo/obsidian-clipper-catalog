@@ -180,7 +180,7 @@
 
 .is-mobile .clipper-catalog-clear-btn{ top: 30%; }
 
-.clipper-catalog-title {
+/* .clipper-catalog-title {
   color: var(--text-normal);
   .cc-font-bold {
     font-weight: 600;
@@ -189,6 +189,45 @@
   + span{
     color: var(--text-muted);
   }
+
+  &.internal-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-normal);
+    &:hover {
+      color: var(--text-accent);
+      text-decoration: underline;
+    }
+  }
+} */
+
+/* Title link styles */
+.clipper-catalog-title-link.internal-link.markdown-preview-view {
+  padding: 0;
+  margin: 0;
+  color: var(--link-color);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.clipper-catalog-title-link.internal-link.markdown-preview-view:hover {
+  color: var(--link-color-hover, var(--link-color));
+  text-decoration: underline;
+}
+
+/* Bold variant */
+.clipper-catalog-title-link.internal-link.markdown-preview-view.cc-font-bold {
+  font-weight: var(--font-bold, 600);
+}
+
+/* Container spacing */
+.clipper-catalog-content .cc-flex.cc-items-center {
+  gap: 0.5rem;
 }
 
 /* Checkbox styles */
