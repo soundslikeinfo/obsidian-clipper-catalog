@@ -1,5 +1,17 @@
 ## Changelog
 
+### [1.1.1] - 2025-02-07
+- Remove incorrect privacy statement from the [README.md](README.md)
+- Provide Hover Editor support, if Hover Editor plugin is turned on
+- Context menus everywhere. Find context menus in Titles, Paths, tags, URLs
+	- Discern frontmatter tags from inline tags
+	- Open URLs from the note's link context menu
+- More control over where notes are opened from the main catalog view
+	- Open to the right with the context menu
+	- Open in Hover Editor by pressing ctrl/cmd on the keyboard while hovering the link to the note
+	- Open note in a new window when holding down shift
+- Update note's link style
+
 ### [1.1.0] - 2025-02-04 
 - Introduce **Checkboxes** - Mark clippings as *read* or *completed*, found in preferences for **Read status**
 	- Experimental: Change the checkbox styles if loading an incompatible theme

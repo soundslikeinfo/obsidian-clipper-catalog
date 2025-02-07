@@ -473,12 +473,10 @@
       padding: 6px 12px;
       color: var(--text-normal);
       transition: all 200ms ease-in-out;
-    }
-    textarea:focus,
-    input[type="text"]:focus,
-    select:focus {
-      border-color: var(--interactive-accent);
-      box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+      &:focus{
+        border-color: var(--interactive-accent);
+        box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+      }
     }
     textarea {
       min-height: 100px;
