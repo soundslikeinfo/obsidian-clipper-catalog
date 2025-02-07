@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-clipper-catalog",
-	"version": "1.1.1-0",
+	"version": "1.1.1",
 	"description": "This provides any Obsidian vault with a catalog of all the clippings gathered with a common source property.",
 	"main": "main.js",
 	"scripts": {
