@@ -420,12 +420,6 @@
   }
 }
 
-/* Text utilities */
-
-.text-sm {
-  font-size: .75rem;
-}
-
 .clipper-catalog-plugin {
   /* Add minimal reset only for our plugin elements */
   & * {
@@ -594,31 +588,9 @@
   top: 30%;
 }
 
-/* .clipper-catalog-title {
-  color: var(--text-normal);
-  .cc-font-bold {
-    font-weight: 600;
-  }
-
-  + span{
-    color: var(--text-muted);
-  }
-
-  &.internal-link {
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    color: var(--text-normal);
-    &:hover {
-      color: var(--text-accent);
-      text-decoration: underline;
-    }
-  }
-} */
-
 /* Title link styles */
 
-.clipper-catalog-title-link.internal-link.markdown-preview-view {
+.clipper-catalog-title-link {
   padding: 0;
   margin: 0;
   color: var(--link-color);
@@ -628,23 +600,21 @@
   display: inline-flex;
   align-items: center;
   cursor: pointer;
-}
-
-.clipper-catalog-title-link.internal-link.markdown-preview-view:hover {
-  color: var(--link-color-hover, var(--link-color));
-  text-decoration: underline;
-}
-
-/* Bold variant */
-
-.clipper-catalog-title-link.internal-link.markdown-preview-view.cc-font-bold {
-  font-weight: var(--font-bold, 600);
+  &:hover {
+    color: var(--link-color-hover, var(--link-color));
+    text-decoration: underline;
+  }
+  &.cc-font-bold {
+    font-weight: var(--font-bold, 600);
+  }
 }
 
 /* Container spacing */
 
-.clipper-catalog-content .cc-flex.cc-items-center {
-  gap: 0.5rem;
+.clipper-catalog-content {
+  .cc-flex.cc-items-center{
+    gap: 0.5rem;
+  }
 }
 
 /* Checkbox styles */
@@ -672,17 +642,18 @@
   margin-inline-end: 0 !important;
 }
 
-.clipper-catalog-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
-.clipper-catalog-checkbox:checked::before {
-  content: "";
-  width: 10px;
-  height: 10px;
-  background-color: var(--text-on-accent, white);
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+.clipper-catalog-checkbox{
+  &:checked {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    &::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      background-color: var(--text-on-accent, white);
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+  }
 }
 
 /* Compatibility for themes */
