@@ -1,5 +1,11 @@
 ## Changelog
 
+### [1.2.0] - 2025-02-07 
+- Including read filters
+	- Hide completed clips
+	- Show only completed clips
+- Note counts for both shown and hidden clips show in the columns
+
 ### [1.1.1] - 2025-02-07
 - Remove incorrect privacy statement from the [README.md](README.md)
 - Provide Hover Editor support, if Hover Editor plugin is turned on
