@@ -319,6 +319,10 @@
   font-weight: 500;
 }
 
+.cc-font-normal {
+  font-weight: 400;
+}
+
 .cc-italic {
   font-style: italic;
 }
@@ -355,6 +359,10 @@
 
 .cc-underline {
   text-decoration-line: underline;
+}
+
+.cc-underline-offset-2 {
+  text-underline-offset: 2px;
 }
 
 .cc-opacity-0 {
@@ -553,6 +561,9 @@
 
 .clipper-catalog-header-cell {
   color: var(--text-normal);
+  span.count{
+    font-weight: 400;
+  }
   &:hover {
     background-color: var(--background-modifier-hover);
   }
@@ -586,6 +597,18 @@
   top: 30%;
 }
 
+.internal-link{
+  color: var(--link-color);
+  cursor: pointer;
+  &:hover {
+    color: var(--link-color-hover, var(--link-color));
+    text-decoration: underline;
+  }
+  &.cc-font-bold {
+    font-weight: var(--font-bold, 600);
+  }
+}
+
 /* Title link styles */
 
 .clipper-catalog-title-link {
@@ -594,7 +617,6 @@
   color: var(--link-color);
   text-decoration: none;
   border-bottom: 1px solid transparent;
-  transition: all 0.15s ease-in-out;
   display: inline-flex;
   align-items: center;
   cursor: pointer;
@@ -809,6 +831,27 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
     -webkit-backdrop-filter: blur(4px);
             backdrop-filter: blur(4px);
   }
+}
+
+.clipper-catalog-header-cell:first-child {
+  text-align: center;
+}
+
+.clipper-catalog-header-cell:first-child > div {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  padding-left: 0 !important;
+}
+
+.clipper-catalog-header-cell:first-child [data-tooltip]:hover::before {
+  left: 100%;
+  transform: translateX(-30px);
+  margin-left: 8px;
+  /* Adjust this value as needed */
+  bottom: -50px;
+  white-space: nowrap;
+  width: 140px;
 }
 
 .cc-narrow-view-visible{
