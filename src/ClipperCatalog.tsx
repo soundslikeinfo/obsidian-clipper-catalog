@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, Search, RefreshCw, ChevronDown, ChevronRight, X, HelpCircle, Tag } from 'lucide-react';
+import { Link, Search, RefreshCw, ChevronDown, ChevronRight, ChevronUp, X, HelpCircle, Tag, CheckSquare, EyeOff } from 'lucide-react';
 import { TFile, App, Menu, ItemView } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
 import { ClipperCatalogView, VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
@@ -95,12 +95,15 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNarrowView, setIsNarrowView] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(false);
+  const [showOnlyCompleted, setShowOnlyCompleted] = useState(false);
   const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({
     ignoredDirectories: plugin.settings.ignoredDirectories,
     isExpanded: plugin.settings.isAdvancedSettingsExpanded
   });
   const [newDirectory, setNewDirectory] = useState('');
-
+  const completedCount = articles.filter(article => article.read).length;
+  
     // Add state to track if we're currently hovering
   const [hoveredElement, setHoveredElement] = useState<{
     element: HTMLElement;
@@ -312,7 +315,15 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         ? a.date - b.date 
         : b.date - a.date;
     }
-    
+
+    if (sortConfig.key === 'read') {
+      // Sort read items first when ascending, unread first when descending
+      if (sortConfig.direction === 'asc') {
+        return (a.read === b.read) ? 0 : a.read ? -1 : 1;
+      }
+      return (a.read === b.read) ? 0 : a.read ? 1 : -1;
+    }
+
     const aValue = String(a[sortConfig.key]).toLowerCase();
     const bValue = String(b[sortConfig.key]).toLowerCase();
     
@@ -322,13 +333,21 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     return bValue.localeCompare(aValue);
   });
 
-  const filteredArticles = sortedArticles.filter(article => 
-    article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    searchTerm.startsWith('#') && article.tags.some(tag => 
-      tag.toLowerCase() === searchTerm.slice(1).toLowerCase()
-    )
-  );
+  const filteredArticles = sortedArticles
+  .filter(article => {
+    // First apply the read/unread filters
+    if (hideCompleted && article.read) return false;
+    if (showOnlyCompleted && !article.read) return false;
+    
+    // Then apply the search filter
+    return (
+      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      searchTerm.startsWith('#') && article.tags.some(tag => 
+        tag.toLowerCase() === searchTerm.slice(1).toLowerCase()
+      )
+    );
+  });
 
   const getSortIcon = (key: keyof Article) => {
     if (sortConfig.key === key) {
@@ -451,6 +470,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
   const renderAdvancedSettingsHeader = () => {
     const excludedCount = advancedSettings.ignoredDirectories.length;
+    const completedCount = articles.filter(article => article.read).length;
     
     return (
       <div>
@@ -468,6 +488,49 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
             </em>
           )}
         </div>
+        {plugin.settings.readPropertyName && (
+          <div className="cc-mt-2 cc-ml-2 cc-flex cc-items-center cc-gap-4">
+            <span
+              onClick={() => {
+                setHideCompleted(!hideCompleted);
+                if (showOnlyCompleted) setShowOnlyCompleted(false);
+              }}
+              className={`cc-inline-flex cc-items-center cc-gap-1 cc-text-sm cc-text-accent hover:cc-underline cc-cursor-pointer internal-link ${
+                hideCompleted ? 'cc-font-bold' : ''
+              }`}
+            >
+              {hideCompleted ? (
+                <ChevronUp className="cc-h-3.5 cc-w-3.5" />
+              ) : (
+                <ChevronDown className="cc-h-3.5 cc-w-3.5" />
+              )}
+              <span className="cc-underline-offset-2">
+                {hideCompleted ? 'Show' : 'Hide'} {plugin.settings.readPropertyName} notes
+              </span>
+            </span>
+
+            <span className="cc-text-muted">|</span>
+
+            <span
+              onClick={() => {
+                setShowOnlyCompleted(!showOnlyCompleted);
+                if (hideCompleted) setHideCompleted(false);
+              }}
+              className={`cc-inline-flex cc-items-center cc-gap-1 cc-text-sm cc-text-accent hover:cc-underline cc-cursor-pointer internal-link ${
+                showOnlyCompleted ? 'cc-font-bold' : ''
+              }`}
+            >
+              {showOnlyCompleted ? (
+                <ChevronUp className="cc-h-3.5 cc-w-3.5" />
+              ) : (
+                <ChevronDown className="cc-h-3.5 cc-w-3.5" />
+              )}
+              <span className="cc-underline-offset-2">
+                {showOnlyCompleted ? 'Show all notes' : `Show only ${plugin.settings.readPropertyName} notes`}
+              </span>
+            </span>
+          </div>
+        )}  
         {!advancedSettings.isExpanded && excludedCount > 0 && (
           <em className="cc-text-xs cc-text-muted cc-p-2 cc-narrow-view-visible">
             Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
@@ -597,15 +660,57 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           <thead>
             <tr className="clipper-catalog-header-row">
               {plugin.settings.readPropertyName && (
-                <th className="cc-px-4 cc-py-2 cc-text-left clipper-catalog-header-cell">
-                  {/* Read */}
+                <th 
+                  onClick={() => handleSort('read')}
+                  className="cc-w-[3%] cc-px-4 cc-py-2 clipper-catalog-header-cell"
+                  style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                >
+                  <div 
+                    className="cc-inline-flex cc-justify-center cc-items-center"
+                    data-tooltip={`Sort by ${plugin.settings.readPropertyName} status`}
+                  >
+                    {!hideCompleted && (
+                      <>
+                        <CheckSquare 
+                          className="cc-h-4 cc-w-4 cc-opacity-50 cc-text-muted" 
+                          strokeWidth={1.5}
+                        />
+                        {getSortIcon('read')}
+                      </>
+                    )}
+                  </div>
                 </th>
               )}
               <th 
                 onClick={() => handleSort('title')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
               >
-                Note {getSortIcon('title')}
+                Note 
+                <span 
+                  className="count cc-px-1.5 cc-text-xs cc-text-muted cc-font-normal"
+                  data-tooltip={showOnlyCompleted ? 
+                    `Showing ${filteredArticles.length} ${plugin.settings.readPropertyName} notes, ${articles.length - filteredArticles.length} unchecked notes hidden` :
+                    hideCompleted ? 
+                      `${completedCount} ${plugin.settings.readPropertyName} notes hidden, ${filteredArticles.length} notes visible` : 
+                      plugin.settings.readPropertyName ? 
+                        `${filteredArticles.filter(article => article.read).length} marked as ${plugin.settings.readPropertyName} out of ${filteredArticles.length} total clippings` : 
+                        `${filteredArticles.length} total clippings found`
+                  }
+                >
+                  ({showOnlyCompleted ? 
+                    <span className="cc-inline-flex cc-items-center cc-gap-0.5">
+                      {`${filteredArticles.length}/${filteredArticles.length} + ${articles.length - filteredArticles.length}`} <EyeOff className="cc-h-3 cc-w-3" strokeWidth={1.5} />
+                    </span> :
+                    hideCompleted ? 
+                      <span className="cc-inline-flex cc-items-center cc-gap-0.5">
+                        {completedCount} <EyeOff className="cc-h-3 cc-w-3" strokeWidth={1.5} />/{filteredArticles.length}
+                      </span> : 
+                      plugin.settings.readPropertyName ? 
+                        `${filteredArticles.filter(article => article.read).length}/${filteredArticles.length}` : 
+                        filteredArticles.length
+                  })
+                </span>
+                {getSortIcon('title')}
               </th>
               <th 
                 onClick={() => handleSort('date')}
