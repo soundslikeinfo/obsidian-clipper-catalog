@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 import ClipperCatalog from './ClipperCatalog';
+import ErrorBoundary from './ErrorBoundary';
 import React from 'react';
 import { ICON_NAME } from './main'; 
 import type ObsidianClipperCatalog from './main';
@@ -33,19 +34,17 @@ export class ClipperCatalogView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     
-    // Add the view container class
-    container.addClass('clipper-catalog-view');
-    
-    const reactContainer = container.createDiv({ 
-      cls: 'clipper-catalog-plugin clipper-catalog-container' 
-    });
-    
+    const reactContainer = container.createDiv({ cls: 'clipper-catalog-container' });
     this.root = createRoot(reactContainer);
     
+    const clipperCatalog = React.createElement(ClipperCatalog, {
+      app: this.app,
+      plugin: this.plugin
+    });
+    
     this.root.render(
-      React.createElement(ClipperCatalog, {
-        app: this.app,
-        plugin: this.plugin
+      React.createElement(ErrorBoundary, {
+        children: clipperCatalog
       })
     );
   }
