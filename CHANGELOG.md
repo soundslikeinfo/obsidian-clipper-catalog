@@ -1,5 +1,9 @@
 ## Changelog
 
+### [1.2.1] - 2025-02-09
+- Fix bug when notes have moved paths
+- Implemented reveal file in navigation for catalog notes
+
 ### [1.2.0] - 2025-02-07 
 - Including read filters
 	- Hide completed clips
