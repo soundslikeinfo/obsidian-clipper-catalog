@@ -446,3 +446,24 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
     font-size: 10px; 
   }
 }
+
+/* Draggable title styles */
+.clipper-catalog-title-link {
+  /* Existing styles... */
+  user-select: none; /* Prevent text selection while dragging */
+  cursor: grab;
+  
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+/* Drag preview styles */
+.clipper-catalog-drag-preview {
+  color: var(--text-normal);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
