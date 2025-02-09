@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Search, RefreshCw, ChevronDown, ChevronRight, ChevronUp, X, HelpCircle, Tag, CheckSquare, EyeOff } from 'lucide-react';
-import { TFile, App, Menu, ItemView, WorkspaceLeaf } from 'obsidian';
+import { TFile, App, Menu, WorkspaceLeaf } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
 import { ClipperCatalogView, VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
-
-// Add these type extensions at the top of your file
-declare module "obsidian" {
-  interface WorkspaceLeaf {
-    containerEl: Element;
-  }
-}
 
 interface ClipperCatalogProps {
   app: App;
@@ -153,7 +146,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   useEffect(() => {
     const checkWidth = () => {
       // Get the current view using recommended API
-      const view = app.workspace.getActiveViewOfType(ItemView);
+      const view = app.workspace.getActiveViewOfType(ClipperCatalogView);
       if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
         const width = view.containerEl.clientWidth;
         
@@ -925,8 +918,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                 return isOpen;
                               };
                         
-                              // Store current active leaf
-                              const previousActiveLeaf = app.workspace.activeLeaf;
+                              // Store current active view
+                              const currentView = app.workspace.getActiveViewOfType(ClipperCatalogView);
                         
                               try {
                                 // If file explorer isn't open, open it
@@ -962,15 +955,20 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   backgroundLeaf.detach();
                                 }
                               } finally {
-                                // Restore the previous active leaf
-                                if (previousActiveLeaf) {
+                                // Restore the previous active view
+                                if (currentView) {
                                   window.setTimeout(() => {
-                                    app.workspace.setActiveLeaf(previousActiveLeaf, { focus: true });
+                                    // Find the leaf containing our view and activate it
+                                    app.workspace.iterateAllLeaves((leaf) => {
+                                      if (leaf.view === currentView) {
+                                        app.workspace.setActiveLeaf(leaf, { focus: true });
+                                      }
+                                    });
                                   }, 10);
                                 }
                               }
                             });
-                        });
+                        });                        
                         
 
                         menu.addItem((item) => {
