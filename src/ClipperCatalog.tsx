@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Search, RefreshCw, ChevronDown, ChevronRight, ChevronUp, X, HelpCircle, Tag, CheckSquare, EyeOff } from 'lucide-react';
-import { TFile, App, Menu, ItemView } from 'obsidian';
+import { TFile, App, Menu, WorkspaceLeaf } from 'obsidian';
 import type ObsidianClipperCatalog from './main';
 import { ClipperCatalogView, VIEW_TYPE_CLIPPER_CATALOG } from './ClipperCatalogView';
 
@@ -50,7 +50,12 @@ const extractDomain = (url: string): string => {
   }
 };
 
-const ArticleTitle = ({ file, content, title }: { file: TFile, content: string, title: string }) => {
+const ArticleTitle = ({ file, content, title }: { file: TFile | null, content: string, title: string }) => {
+  // If file is null or undefined, return the title directly
+  if (!file) {
+    return <span>{title}</span>;
+  }
+
   const isUntitled = /^Untitled( \d+)?$/.test(file.basename);
   const headerMatch = content.match(/^#+ (.+)$/m);
   
@@ -141,7 +146,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   useEffect(() => {
     const checkWidth = () => {
       // Get the current view using recommended API
-      const view = app.workspace.getActiveViewOfType(ItemView);
+      const view = app.workspace.getActiveViewOfType(ClipperCatalogView);
       if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
         const width = view.containerEl.clientWidth;
         
@@ -265,6 +270,30 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     }
   }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories, plugin.settings]);
   
+  useEffect(() => {
+    // Load articles initially
+    loadArticles();
+  
+    // Set up file system event handlers
+    const handleCreate = () => loadArticles();
+    const handleDelete = () => loadArticles();
+    const handleRename = () => loadArticles();
+    const handleModify = () => loadArticles();
+  
+    // Register the event handlers
+    app.vault.on('create', handleCreate);
+    app.vault.on('delete', handleDelete);
+    app.vault.on('rename', handleRename);
+    app.vault.on('modify', handleModify);
+  
+    // Cleanup function to remove event handlers
+    return () => {
+      app.vault.off('create', handleCreate);
+      app.vault.off('delete', handleDelete);
+      app.vault.off('rename', handleRename);
+      app.vault.off('modify', handleModify);
+    };
+  }, [loadArticles, app.vault]);
 
   // Initial load
   useEffect(() => {
@@ -869,6 +898,81 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         
                         menu.addItem((item) => {
                           item
+                            .setTitle("Reveal file in navigation")
+                            .setIcon("folder")
+                            .onClick(async () => {
+                              // Get the file and ensure it's a TFile
+                              const file = app.vault.getAbstractFileByPath(article.path);
+                              if (!(file instanceof TFile)) return;
+                        
+                              // Helper to check if file explorer is open
+                              const isFileExplorerOpen = () => {
+                                let isOpen = false;
+                                app.workspace.iterateAllLeaves((leaf) => {
+                                  const leafWithContainer = leaf as WorkspaceLeaf & { containerEl: Element };
+                                  if (leaf.getViewState().type === "file-explorer" && 
+                                      window.getComputedStyle(leafWithContainer.containerEl, null).display !== "none") {
+                                    isOpen = true;
+                                  }
+                                });
+                                return isOpen;
+                              };
+                        
+                              // Store current active view
+                              const currentView = app.workspace.getActiveViewOfType(ClipperCatalogView);
+                        
+                              try {
+                                // If file explorer isn't open, open it
+                                if (!isFileExplorerOpen()) {
+                                  await (app as any).commands.executeCommandById('file-explorer:open');
+                                }
+                        
+                                // Find the file explorer leaf
+                                let explorerLeaf: WorkspaceLeaf | null = null;
+                                app.workspace.iterateAllLeaves((leaf) => {
+                                  if (leaf.getViewState().type === "file-explorer") {
+                                    explorerLeaf = leaf;
+                                  }
+                                });
+                        
+                                if (explorerLeaf) {
+                                  // Create a background leaf but don't focus it
+                                  const backgroundLeaf = app.workspace.getLeaf('tab');
+                                  
+                                  // Load the file in the background
+                                  await backgroundLeaf.openFile(file, { 
+                                    active: false,
+                                    state: { mode: 'source' }
+                                  });
+                        
+                                  // Temporarily activate explorer leaf (needed for reveal)
+                                  app.workspace.setActiveLeaf(explorerLeaf, { focus: false });
+                                  
+                                  // Reveal the file
+                                  await (app as any).commands.executeCommandById('file-explorer:reveal-active-file');
+                        
+                                  // Clean up the background leaf
+                                  backgroundLeaf.detach();
+                                }
+                              } finally {
+                                // Restore the previous active view
+                                if (currentView) {
+                                  window.setTimeout(() => {
+                                    // Find the leaf containing our view and activate it
+                                    app.workspace.iterateAllLeaves((leaf) => {
+                                      if (leaf.view === currentView) {
+                                        app.workspace.setActiveLeaf(leaf, { focus: true });
+                                      }
+                                    });
+                                  }, 10);
+                                }
+                              }
+                            });
+                        });                        
+                        
+
+                        menu.addItem((item) => {
+                          item
                             .setTitle("Copy full path")
                             .setIcon("copy")
                             .onClick(() => {
@@ -955,7 +1059,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           }}
                         >
                           <ArticleTitle 
-                            file={app.vault.getAbstractFileByPath(article.path) as TFile}
+                            file={app.vault.getAbstractFileByPath(article.path) as TFile || null}
                             content={article.content || ''}
                             title={article.title}
                           />
