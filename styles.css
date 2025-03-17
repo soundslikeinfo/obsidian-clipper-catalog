@@ -880,29 +880,35 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   }
 }
 
-/* Draggable title styles */
+/* Drag title styles */
+
+.clipper-catalog-drag-preview {
+  position: fixed;
+  top: -1000px;
+  background: var(--background-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Title link styles */
 
 .clipper-catalog-title-link {
-  /* Existing styles... */
   -webkit-user-select: none;
      -moz-user-select: none;
           user-select: none;
-  /* Prevent text selection while dragging */
   cursor: grab;
+  &:hover {
+    cursor: pointer;
+  }
   &:active {
     cursor: grabbing;
   }
-}
-
-/* Drag preview styles */
-
-.clipper-catalog-drag-preview {
-  color: var(--text-normal);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-width: 300px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .hover\:cc-bg-blue-200:hover {
@@ -997,3 +1003,4 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   --tw-text-opacity: 1;
   color: rgb(209 213 219 / var(--tw-text-opacity, 1));
 }
+

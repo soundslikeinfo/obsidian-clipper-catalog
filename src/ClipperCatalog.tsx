@@ -1057,47 +1057,18 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             const file = app.vault.getAbstractFileByPath(article.path);
                             if (!(file instanceof TFile)) return;
                             
-                            // Create clean link format using just the basename without extension
+                            // Create clean link format
                             const cleanName = file.basename;
                             const linkText = `[[${cleanName}]]`;
                             
-                            // Set multiple data formats
-                            event.dataTransfer.setData('text/plain', linkText); // For regular text drops
-                            
-                            // For Obsidian's internal link handling
-                            const internalData = {
-                              type: 'file',
-                              path: file.path,
-                              linktext: cleanName,
-                              // Include additional data Obsidian needs for file operations
-                              file: {
-                                path: file.path,
-                                basename: cleanName,
-                                extension: file.extension
-                              }
-                            };
-                            
-                            // Set data for Obsidian's internal handling
-                            event.dataTransfer.setData('application/x-obsidian-file', JSON.stringify(internalData));
-                            event.dataTransfer.setData('application/x-obsidian-link', JSON.stringify(internalData));
+                            // Set data for link creation
+                            event.dataTransfer.setData('text/plain', linkText);
                             
                             // Create visual feedback
                             const dragImage = document.createElement('div');
                             dragImage.className = 'clipper-catalog-drag-preview';
                             dragImage.textContent = cleanName;
-                            dragImage.style.cssText = `
-                              position: fixed;
-                              top: -1000px;
-                              background: var(--background-primary);
-                              padding: 4px 8px;
-                              border-radius: 4px;
-                              border: 1px solid var(--background-modifier-border);
-                              font-size: 14px;
-                              pointer-events: none;
-                              z-index: 1000;
-                              opacity: 0.9;
-                              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                            `;
+                            
                             document.body.appendChild(dragImage);
                             event.dataTransfer.setDragImage(dragImage, 0, 0);
                             
