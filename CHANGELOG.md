@@ -1,5 +1,10 @@
 ## Changelog
 
+### [1.3.0] - 2025-03-17
+- Introduce draggable titles
+- Support url list property type
+- Remove "Clipped from..." from unsupported urls
+
 ### [1.2.1] - 2025-02-09
 - Fix bug when notes have moved paths
 - Implemented reveal file in navigation for catalog notes
