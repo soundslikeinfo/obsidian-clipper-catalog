@@ -11,7 +11,7 @@ interface ClipperCatalogProps {
 
 interface Article {
   title: string;
-  urls: { [key: string]: string };
+  urls: { [key: string]: string | string[] };
   path: string;
   date: number;
   tags: string[];
@@ -32,7 +32,11 @@ interface AdvancedSettings {
   isExpanded: boolean;
 }
 
-const isValidUrl = (url: string): boolean => {
+const isValidUrl = (url: string | string[]): boolean => {
+  if (Array.isArray(url)) {
+    return url.length > 0 && url.every(item => isValidUrl(item));
+  }
+  
   try {
     new URL(url);
     return true;
@@ -219,32 +223,43 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         .split(',')
         .map(name => name.trim())
         .filter(Boolean);
-  
+    
       for (const file of files) {
         try {
           if (isPathIgnored(file.parent?.path || '')) continue;
-  
+    
           const metadata = app.metadataCache.getFileCache(file);
           if (!metadata?.frontmatter) continue;
-  
-          const urls: { [key: string]: string } = {};
+    
+          // Explicitly type urls to accept both strings and string arrays
+          const urls: { [key: string]: string | string[] } = {};
           const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
-  
+    
           // Collect URLs from specified properties
           for (const propName of propertyNames) {
             const value = metadata.frontmatter[propName];
-            if (value) urls[propName] = value;
+            if (value) {
+              if (Array.isArray(value)) {
+                // Filter out empty items in the array
+                const filteredValue = value.filter(item => typeof item === 'string' && item.trim() !== '');
+                if (filteredValue.length > 0) {
+                  urls[propName] = filteredValue;
+                }
+              } else {
+                urls[propName] = value;
+              }
+            }
           }
-  
+    
           if (Object.keys(urls).length > 0) {
             const content = await app.vault.read(file);
             const frontmatterTags = processFrontmatterTags(metadata.frontmatter, plugin.settings);
             const contentTags = processContentTags(metadata.tags);
             const allTags = [...new Set([...frontmatterTags, ...contentTags])];
-  
+    
             articleFiles.push({
               title: file.basename,
-              urls, // Changed from url: source
+              urls, // Now correctly typed as { [key: string]: string | string[] }
               path: file.path,
               date: file.stat.ctime,
               tags: allTags,
@@ -259,7 +274,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           console.error(`Error processing file ${file.path}:`, error);
         }
       }
-  
+    
       setArticles(articleFiles);
     } catch (error) {
       console.error("Error loading articles:", error);
@@ -981,8 +996,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         });
 
                         // Loop through all URLs in article.urls
+                        // In handleContextMenu function for files
                         Object.entries(article.urls).forEach(([propName, url]) => {
-                          if (isValidUrl(url)) {
+                          // Handle single URL (string)
+                          if (typeof url === 'string' && isValidUrl(url)) {
                             menu.addSeparator();
 
                             menu.addItem((item) => {
@@ -1003,8 +1020,41 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                 });
                             });
                           }
+                          // Handle array of URLs
+                          else if (Array.isArray(url)) {
+                            // Filter out empty items
+                            const validUrls = url.filter(item => typeof item === 'string' && item.trim() !== '');
+                            
+                            if (validUrls.length > 0) {
+                              menu.addSeparator();
+                              
+                              // Add a submenu for each URL in the array
+                              validUrls.forEach((singleUrl, index) => {
+                                if (typeof singleUrl === 'string' && isValidUrl(singleUrl)) {
+                                  menu.addItem((item) => {
+                                    item
+                                      .setTitle(`Open ${propName} ${validUrls.length > 1 ? (index + 1) : ''} in browser`.trim())
+                                      .setIcon("globe")
+                                      .onClick(() => {
+                                        window.open(singleUrl, '_blank');
+                                      });
+                                  });
+
+                                  menu.addItem((item) => {
+                                    item
+                                      .setTitle(`Copy ${propName} ${validUrls.length > 1 ? (index + 1) : ''} URL`.trim())
+                                      .setIcon("copy")
+                                      .onClick(() => {
+                                        navigator.clipboard.writeText(singleUrl);
+                                      });
+                                  });
+                                }
+                              });
+                            }
+                          }
+
                         });
-                    
+
                         // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
                         menu.showAtMouseEvent(event.nativeEvent);
                       }}
@@ -1067,17 +1117,30 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                       </div>
                     </div>
                     {/* "Clipped from" info - no hover events */}
-                    {plugin.settings.showClippedFrom && Object.values(article.urls)
-                      .map(url => isValidUrl(url) ? extractDomain(url) : null)
-                      .filter(Boolean)
-                      .length > 0 && (
-                        <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
-                          Clipped from {Object.values(article.urls)
-                            .map(url => isValidUrl(url) ? extractDomain(url) : null)
-                            .filter(Boolean)
-                            .join(', ')}
-                        </span>
-                      )
+                    {plugin.settings.showClippedFrom && 
+                      // First, extract all domains from valid URLs
+                      (() => {
+                        const domains = Object.entries(article.urls)
+                          .flatMap(([propName, urlValue]) => {
+                            if (typeof urlValue === 'string') {
+                              return isValidUrl(urlValue) ? extractDomain(urlValue) : null;
+                            } else if (Array.isArray(urlValue)) {
+                              return urlValue
+                                .filter(item => typeof item === 'string' && item.trim() !== '')
+                                .map(url => isValidUrl(url) ? extractDomain(url) : null)
+                                .filter(Boolean);
+                            }
+                            return null;
+                          })
+                          .filter(Boolean);
+                        
+                        // Only render if we have valid domains
+                        return domains.length > 0 ? (
+                          <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
+                            Clipped from {domains.join(', ')}
+                          </span>
+                        ) : null;
+                      })()
                     }
                   </div>
                 </td>
@@ -1207,12 +1270,14 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 </td>
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-flex-col cc-gap-1">
-                    {Object.entries(article.urls).map(([propName, url], index, array) => (
-                      isValidUrl(url) ? (
+                    {Object.entries(article.urls).map(([propName, urlValue], index, array) => {
+                    // Handle strings
+                    if (typeof urlValue === 'string') {
+                      return isValidUrl(urlValue) ? (
                         <div key={propName} className="cc-flex cc-flex-col">
                           <a 
                             key={propName}
-                            href={url}
+                            href={urlValue}
                             target="_blank"
                             rel="noopener noreferrer"
                             onContextMenu={(event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -1224,7 +1289,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   .setTitle(`Open ${propName} in browser`)
                                   .setIcon("globe")
                                   .onClick(() => {
-                                    window.open(url, '_blank');
+                                    window.open(urlValue, '_blank');
                                   });
                               });
 
@@ -1233,22 +1298,20 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   .setTitle(`Copy ${propName} ${propName === "url" ? '' : 'URL'}`)
                                   .setIcon("copy")
                                   .onClick(() => {
-                                    navigator.clipboard.writeText(url);
+                                    navigator.clipboard.writeText(urlValue);
                                   });
                               });
 
                               menu.showAtMouseEvent(event.nativeEvent);
                             }}
                             onClick={(e) => {
-                              // OnClick to open in external window, even with web viewer plugin enabled
                               if (e.ctrlKey || e.metaKey) {
                                 e.preventDefault();
-                                // Expected to work in upcoming Obsidian version
-                                window.open(url, '_external');
+                                window.open(urlValue, '_external');
                               }
                             }}
                             className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
-                            aria-label={`Go to ${url}`}
+                            aria-label={`Go to ${urlValue}`}
                           >
                             <Link className="cc-h-3 cc-w-3" />
                             <span className="cc-text-sm">
@@ -1265,8 +1328,87 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           <X className="cc-h-3 cc-w-3" />
                           <span className="cc-text-xs">{propName}</span>
                         </span>
-                      )
-                    ))}
+                      );
+                    } 
+                    // Handle arrays
+                    else if (Array.isArray(urlValue)) {
+                      // Filter out empty items from the array
+                      const validUrls = urlValue.filter(item => typeof item === 'string' && item.trim() !== '');
+                      
+                      return (
+                        <div key={propName} className="cc-flex cc-flex-col cc-gap-0.5">
+                          {validUrls.map((urlItem, urlIndex) => {
+                            // Ensure urlItem is a string and valid
+                            if (typeof urlItem === 'string' && isValidUrl(urlItem)) {
+                              // Now urlItem is definitely a string
+                              const safeUrl = urlItem; // Create a const reference that TS knows is a string
+                              
+                              return (
+                                <a 
+                                  key={`${propName}-${urlIndex}`}
+                                  href={safeUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onContextMenu={(event: React.MouseEvent<HTMLAnchorElement>) => {
+                                    event.preventDefault();
+                                    const menu = new Menu();
+                    
+                                    menu.addItem((item) => {
+                                      item
+                                        .setTitle(`Open ${propName} ${validUrls.length > 1 ? (urlIndex + 1) : ''} in browser`.trim())
+                                        .setIcon("globe")
+                                        .onClick(() => {
+                                          window.open(safeUrl, '_blank');
+                                        });
+                                    });
+                    
+                                    menu.addItem((item) => {
+                                      item
+                                        .setTitle(`Copy ${propName} ${validUrls.length > 1 ? (urlIndex + 1) : ''} URL`.trim())
+                                        .setIcon("copy")
+                                        .onClick(() => {
+                                          navigator.clipboard.writeText(safeUrl);
+                                        });
+                                    });
+                    
+                                    menu.showAtMouseEvent(event.nativeEvent);
+                                  }}
+                                  onClick={(e) => {
+                                    if (e.ctrlKey || e.metaKey) {
+                                      e.preventDefault();
+                                      window.open(safeUrl, '_external');
+                                    }
+                                  }}
+                                  className="cc-inline-flex cc-items-center cc-gap-0.5 cc-transition-colors clipper-catalog-link"
+                                  aria-label={`Go to ${safeUrl}`}
+                                >
+                                  <Link className="cc-h-3 cc-w-3" />
+                                  <span className="cc-text-sm">
+                                    {validUrls.length > 1 ? `${propName} ${urlIndex + 1}` : propName}
+                                  </span>
+                                </a>
+                              );
+                            } else {
+                              return (
+                                <span 
+                                  key={`${propName}-${urlIndex}`}
+                                  className="cc-inline-flex cc-items-center cc-gap-0.5 cc-text-error cc-opacity-50"
+                                  title="Invalid URL"
+                                >
+                                  <X className="cc-h-3 cc-w-3" />
+                                  <span className="cc-text-xs">
+                                    {validUrls.length > 1 ? `${propName} ${urlIndex + 1}` : propName}
+                                  </span>
+                                </span>
+                              );
+                            }
+                          })}
+                        </div>
+                      );
+                    }
+                                    
+                      return null;
+                    })}
                   </div>
                 </td>
               </tr>
