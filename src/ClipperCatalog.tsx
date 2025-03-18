@@ -858,6 +858,28 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
                         menu.addItem((item) => {
                           item
+                            .setTitle(`Open in background tab`)
+                            .setIcon("file-plus")
+                            .onClick(async () => {
+                              const file = app.vault.getAbstractFileByPath(article.path);
+                              if (!(file instanceof TFile)) return;
+                              
+                              // Store current active leaf
+                              const currentLeaf = app.workspace.activeLeaf;
+                              
+                              // Create and open in new leaf
+                              const newLeaf = app.workspace.getLeaf('tab');
+                              await newLeaf.openFile(file);
+                              
+                              // Switch back to the original leaf
+                              if (currentLeaf) {
+                                app.workspace.setActiveLeaf(currentLeaf, { focus: true });
+                              }
+                            });
+                        });
+                        
+                        menu.addItem((item) => {
+                          item
                             .setTitle(`Open in new window`)
                             .setIcon("picture-in-picture-2")
                             .onClick(() => {
@@ -1079,8 +1101,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
                           }`}
                           data-href={article.path}
-                          data-type="link"
-                          /* aria-label={article.title} */
+                          // Hovertip Label interferes with Hover editor preview
+                          // aria-label={article.title}
                           onMouseEnter={(event) => {
                             setHoveredElement({
                               element: event.currentTarget,
@@ -1106,6 +1128,31 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           }}
                           onMouseLeave={() => {
                             setHoveredElement(null);
+                          }}
+                          data-type="link"
+                          draggable="true"
+                          onDragStart={(event) => {
+                            const file = app.vault.getAbstractFileByPath(article.path);
+                            if (!(file instanceof TFile)) return;
+                            
+                            // Create clean link format
+                            const cleanName = file.basename;
+                            const linkText = `[[${cleanName}]]`;
+                            
+                            // Set data for link creation
+                            event.dataTransfer.setData('text/plain', linkText);
+                            event.dataTransfer.effectAllowed = 'copy';
+
+                            // Create visual feedback
+                            const dragElement = document.createElement('div');
+                            dragElement.classList.add('clipper-catalog-drag-preview');
+                            dragElement.innerHTML = `<div><svg viewBox="0 0 100 100" class="document" width="17" height="17"><path fill="currentColor" stroke="currentColor" d="M14,4v92h72V29.2l-0.6-0.6l-24-24L60.8,4H14z M18,8h40v24h24v60H18V8z M62,10.9L79.1,28H62V10.9z"></path></svg> ${file.basename}</div>`;
+                            document.body.appendChild(dragElement);
+                            event.dataTransfer.setDragImage(dragElement, 0, 0);
+                            
+                            setTimeout(() => {
+                              document.body.removeChild(dragElement);
+                            }, 0);
                           }}
                         >
                           <ArticleTitle 
