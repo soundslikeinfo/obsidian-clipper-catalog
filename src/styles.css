@@ -58,8 +58,8 @@
       max-width: 500px;
       margin-right: 2em;
     }
-    
-    textarea, 
+
+    textarea,
     input[type="text"],
     select {
       background-color: var(--background-modifier-form-field);
@@ -179,20 +179,20 @@
 .is-mobile .clipper-catalog-clear-btn{ top: 30%; }
 
 .internal-link{
-  
+
     color: var(--link-color);
 
     cursor: pointer;
-  
+
     &:hover {
       color: var(--link-color-hover, var(--link-color));
       text-decoration: underline;
     }
-  
+
     &.cc-font-bold {
       font-weight: var(--font-bold, 600);
     }
-  
+
 }
 
 /* Title link styles */
@@ -267,7 +267,7 @@
   &:checked {
     background-color: var(--interactive-accent);
     border-color: var(--interactive-accent);
-    
+
     &::before {
       content: "";
       width: 10px;
@@ -384,7 +384,7 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   opacity: 0.8;
   top: 0;
   transition: opacity 0.2s ease;
-  
+
   &:hover {
     opacity: 1;
   }
@@ -395,7 +395,7 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   color: var(--text-accent);
   font-size: 0.75rem;
   padding: 0.25rem 0;
-  
+
   &:hover {
     text-decoration: underline;
   }
@@ -426,7 +426,7 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
     z-index: 1001;
     backdrop-filter: blur(4px);
   }
-} 
+}
 
 .clipper-catalog-header-cell:first-child {
   text-align: center;
@@ -456,13 +456,13 @@ input.clipper-catalog-compatible-checkbox[type=checkbox]:checked {
   overflow-x: auto;
 
   .cc-narrow-view-visible{ display: block; }
-  
+
   .cc-narrow-view-hidden{ display: none; }
 
   .clipper-catalog-header-cell [data-tooltip]:hover::before {
     transform: translateX(-50%);
     width: 150px;
     max-width: 150px;
-    font-size: 10px; 
+    font-size: 10px;
   }
 }

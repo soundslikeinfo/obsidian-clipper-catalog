@@ -36,7 +36,7 @@ const isValidUrl = (url: string | string[]): boolean => {
   if (Array.isArray(url)) {
     return url.length > 0 && url.every(item => isValidUrl(item));
   }
-  
+
   try {
     new URL(url);
     return true;
@@ -62,7 +62,7 @@ const ArticleTitle = ({ file, content, title }: { file: TFile | null, content: s
 
   const isUntitled = /^Untitled( \d+)?$/.test(file.basename);
   const headerMatch = content.match(/^#+ (.+)$/m);
-  
+
   if (isUntitled && headerMatch) {
     return (
       <div className="cc-flex cc-flex-col">
@@ -71,17 +71,17 @@ const ArticleTitle = ({ file, content, title }: { file: TFile | null, content: s
       </div>
     );
   }
-  
+
   return <span>{file.basename}</span>;
 };
 
 const processFrontmatterTags = (frontmatter: any, settings: any): string[] => {
   if (!settings.includeFrontmatterTags || !frontmatter.tags) return [];
-  
-  const tags = Array.isArray(frontmatter.tags) 
-    ? frontmatter.tags 
+
+  const tags = Array.isArray(frontmatter.tags)
+    ? frontmatter.tags
     : frontmatter.tags.split(',').map((t: string) => t.trim());
-    
+
   return tags
     .map((tag: string) => tag.startsWith('#') ? tag.slice(1) : tag)
     .filter(Boolean);
@@ -112,7 +112,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   });
   const [newDirectory, setNewDirectory] = useState('');
   const completedCount = articles.filter(article => article.read).length;
-  
+
     // Add state to track if we're currently hovering
   const [hoveredElement, setHoveredElement] = useState<{
     element: HTMLElement;
@@ -153,24 +153,24 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       const view = app.workspace.getActiveViewOfType(ClipperCatalogView);
       if (view?.getViewType() === VIEW_TYPE_CLIPPER_CATALOG) {
         const width = view.containerEl.clientWidth;
-        
+
         setIsNarrowView(width < 750);
       }
     };
-  
+
     // Register workspace layout change event
     const handleLayoutChange = () => {
       requestAnimationFrame(checkWidth); // Use requestAnimationFrame for smoother handling
     };
-  
+
     app.workspace.on('layout-change', handleLayoutChange);
-    
+
     // Initial check
     requestAnimationFrame(checkWidth);
-  
+
     // Also check on window resize
     window.addEventListener('resize', handleLayoutChange);
-  
+
     return () => {
       app.workspace.off('layout-change', handleLayoutChange);
       window.removeEventListener('resize', handleLayoutChange);
@@ -191,31 +191,31 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       // Normalize both paths to use forward slashes and remove trailing slashes
       const normalizedDir = dir.replace(/\\/g, '/').replace(/\/$/, '');
       const normalizedPath = filePath.replace(/\\/g, '/');
-      
+
       // Split the paths into segments
       const dirParts = normalizedDir.split('/');
       const pathParts = normalizedPath.split('/');
-      
+
       // Check if the number of path parts is at least equal to directory parts
       if (pathParts.length < dirParts.length) return false;
-      
+
       // Compare each segment
       for (let i = 0; i < dirParts.length; i++) {
         if (dirParts[i].toLowerCase() !== pathParts[i].toLowerCase()) {
           return false;
         }
       }
-      
+
       // Only match if we've matched all segments exactly
       return dirParts.length === pathParts.length - 1 || // Directory contains files
               dirParts.length === pathParts.length;       // Directory is exactly matched
     });
   };
-  
+
   const loadArticles = useCallback(async () => {
     setIsRefreshing(true);
     setError(null);
-    
+
     try {
       const articleFiles: Article[] = [];
       const files = app.vault.getMarkdownFiles();
@@ -223,18 +223,18 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         .split(',')
         .map(name => name.trim())
         .filter(Boolean);
-    
+
       for (const file of files) {
         try {
           if (isPathIgnored(file.parent?.path || '')) continue;
-    
+
           const metadata = app.metadataCache.getFileCache(file);
           if (!metadata?.frontmatter) continue;
-    
+
           // Explicitly type urls to accept both strings and string arrays
           const urls: { [key: string]: string | string[] } = {};
           const read = metadata.frontmatter[plugin.settings.readPropertyName] === true;
-    
+
           // Collect URLs from specified properties
           for (const propName of propertyNames) {
             const value = metadata.frontmatter[propName];
@@ -250,13 +250,13 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               }
             }
           }
-    
+
           if (Object.keys(urls).length > 0) {
             const content = await app.vault.read(file);
             const frontmatterTags = processFrontmatterTags(metadata.frontmatter, plugin.settings);
             const contentTags = processContentTags(metadata.tags);
             const allTags = [...new Set([...frontmatterTags, ...contentTags])];
-    
+
             articleFiles.push({
               title: file.basename,
               urls, // Now correctly typed as { [key: string]: string | string[] }
@@ -274,7 +274,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           console.error(`Error processing file ${file.path}:`, error);
         }
       }
-    
+
       setArticles(articleFiles);
     } catch (error) {
       console.error("Error loading articles:", error);
@@ -284,23 +284,23 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       setIsLoading(false);
     }
   }, [app.vault, app.metadataCache, advancedSettings.ignoredDirectories, plugin.settings]);
-  
+
   useEffect(() => {
     // Load articles initially
     loadArticles();
-  
+
     // Set up file system event handlers
     const handleCreate = () => loadArticles();
     const handleDelete = () => loadArticles();
     const handleRename = () => loadArticles();
     const handleModify = () => loadArticles();
-  
+
     // Register the event handlers
     app.vault.on('create', handleCreate);
     app.vault.on('delete', handleDelete);
     app.vault.on('rename', handleRename);
     app.vault.on('modify', handleModify);
-  
+
     // Cleanup function to remove event handlers
     return () => {
       app.vault.off('create', handleCreate);
@@ -319,7 +319,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     const intervalId = setInterval(() => {
       loadArticles();
     }, 60000);
-  
+
     return () => clearInterval(intervalId);
   }, [loadArticles]);
 
@@ -355,8 +355,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
   const sortedArticles = [...articles].sort((a, b) => {
     if (sortConfig.key === 'date') {
-      return sortConfig.direction === 'asc' 
-        ? a.date - b.date 
+      return sortConfig.direction === 'asc'
+        ? a.date - b.date
         : b.date - a.date;
     }
 
@@ -370,7 +370,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
     const aValue = String(a[sortConfig.key]).toLowerCase();
     const bValue = String(b[sortConfig.key]).toLowerCase();
-    
+
     if (sortConfig.direction === 'asc') {
       return aValue.localeCompare(bValue);
     }
@@ -382,12 +382,12 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     // First apply the read/unread filters
     if (hideCompleted && article.read) return false;
     if (showOnlyCompleted && !article.read) return false;
-    
+
     // Then apply the search filter
     return (
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      searchTerm.startsWith('#') && article.tags.some(tag => 
+      searchTerm.startsWith('#') && article.tags.some(tag =>
         tag.toLowerCase() === searchTerm.slice(1).toLowerCase()
       )
     );
@@ -405,20 +405,20 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
     if (event.shiftKey) {
       event.preventDefault();
     }
-  
+
     const file = app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) return;
-  
+
     // If shift is pressed, open in new window using Obsidian's native window creation
     if (event.shiftKey) {
       const leaf = app.workspace.openPopoutLeaf();
       await leaf.openFile(file);
       return;
     }
-  
+
     // Check for Ctrl (Windows) or Command (Mac)
     const newLeaf = event.ctrlKey || event.metaKey;
-  
+
     try {
       if (plugin.settings.openInSameLeaf && !newLeaf) {
         // Get the most suitable leaf
@@ -445,7 +445,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       await leaf.openFile(file);
     }
   };
-  
+
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -468,7 +468,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
     setAdvancedSettings(prev => {
       const updatedDirectories = [...prev.ignoredDirectories];
-      
+
       directoriesToAdd.forEach(dir => {
         if (!updatedDirectories.includes(dir)) {
           updatedDirectories.push(dir);
@@ -504,7 +504,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
       isExpanded: !prev.isExpanded
     }));
   };
-  
+
   const handleClearAllDirectories = () => {
     setAdvancedSettings(prev => ({
       ...prev,
@@ -515,7 +515,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   const renderAdvancedSettingsHeader = () => {
     const excludedCount = advancedSettings.ignoredDirectories.length;
     const completedCount = articles.filter(article => article.read).length;
-    
+
     return (
       <div>
         <div className="cc-flex cc-items-center cc-justify-between cc-w-full">
@@ -574,7 +574,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               </span>
             </span>
           </div>
-        )}  
+        )}
         {!advancedSettings.isExpanded && excludedCount > 0 && (
           <em className="cc-text-xs cc-text-muted cc-p-2 cc-narrow-view-visible">
             Note: There {excludedCount === 1 ? 'is' : 'are'} {excludedCount} path{excludedCount === 1 ? '' : 's'} excluded from showing up in the results
@@ -585,8 +585,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   };
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className={`clipper-catalog-content cc-flex cc-flex-col cc-gap-4${isNarrowView ? ' cc-narrow-view' : ''}`}
       data-narrow={isNarrowView ? 'true' : 'false'} // Add this for debugging
     >
@@ -603,7 +603,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
               className="cc-w-full cc-bg-transparent cc-outline-none cc-text-sm cc-pr-16 clipper-catalog-input"
             />
             {searchTerm && (
-              <div 
+              <div
                 onClick={() => setSearchTerm('')}
                 className="cc-absolute cc-right-2 cc-flex cc-items-center cc-gap-1 cc-cursor-pointer cc-transition-colors clipper-catalog-clear-btn"
               >
@@ -619,7 +619,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         {/* Advanced Settings Section */}
         <div className="cc-mt-2">
           {renderAdvancedSettingsHeader()}
-          
+
           {advancedSettings.isExpanded && (
             <div className="cc-mt-2 cc-px-4 cc-py-2 cc-rounded-lg clipper-catalog-advanced">
             <div className="cc-flex cc-flex-col cc-gap-3">
@@ -645,7 +645,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   Tip: You can enter multiple paths separated by commas
                 </span>
               </div>
-              
+
               {advancedSettings.ignoredDirectories.length > 0 && (
                 <div className="cc-flex cc-flex-col cc-gap-2">
                 <div className="cc-flex cc-items-center cc-justify-between">
@@ -676,11 +676,11 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           </div>
         )}
       </div>
-        
+
         {/* Refresh link */}
         <div className="cc-absolute cc-right-2 cc-top-full cc-mt-1 cc-text-right">
-          <span 
-            onClick={handleRefresh} 
+          <span
+            onClick={handleRefresh}
             className="cc-flex cc-items-center cc-gap-1 cc-text-[10px] cc-cursor-pointer cc-transition-colors cc-justify-end clipper-catalog-refresh"
           >
             <RefreshCw className={`cc-h-2.5 cc-w-2.5 ${isRefreshing ? 'cc-animate-spin' : ''}`} />
@@ -688,7 +688,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           </span>
         </div>
       </div>
-      
+
       <div className="cc-overflow-x-auto cc-min-h-[120px]">
         <table className="cc-w-full cc-text-sm">
           <colgroup>
@@ -704,19 +704,19 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           <thead>
             <tr className="clipper-catalog-header-row">
               {plugin.settings.readPropertyName && (
-                <th 
+                <th
                   onClick={() => handleSort('read')}
                   className="cc-w-[3%] cc-px-4 cc-py-2 clipper-catalog-header-cell"
                   style={{ textAlign: 'center', verticalAlign: 'middle' }}
                 >
-                  <div 
+                  <div
                     className="cc-inline-flex cc-justify-center cc-items-center"
                     data-tooltip={`Sort by ${plugin.settings.readPropertyName} status`}
                   >
                     {!hideCompleted && (
                       <>
-                        <CheckSquare 
-                          className="cc-h-4 cc-w-4 cc-opacity-50 cc-text-muted" 
+                        <CheckSquare
+                          className="cc-h-4 cc-w-4 cc-opacity-50 cc-text-muted"
                           strokeWidth={1.5}
                         />
                         {getSortIcon('read')}
@@ -725,44 +725,44 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   </div>
                 </th>
               )}
-              <th 
+              <th
                 onClick={() => handleSort('title')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell"
               >
-                Note 
-                <span 
+                Note
+                <span
                   className="count cc-px-1.5 cc-text-xs cc-text-muted cc-font-normal"
-                  data-tooltip={showOnlyCompleted ? 
+                  data-tooltip={showOnlyCompleted ?
                     `Showing ${filteredArticles.length} ${plugin.settings.readPropertyName} notes, ${articles.length - filteredArticles.length} unchecked notes hidden` :
-                    hideCompleted ? 
-                      `${completedCount} ${plugin.settings.readPropertyName} notes hidden, ${filteredArticles.length} notes visible` : 
-                      plugin.settings.readPropertyName ? 
-                        `${filteredArticles.filter(article => article.read).length} marked as ${plugin.settings.readPropertyName} out of ${filteredArticles.length} total clippings` : 
+                    hideCompleted ?
+                      `${completedCount} ${plugin.settings.readPropertyName} notes hidden, ${filteredArticles.length} notes visible` :
+                      plugin.settings.readPropertyName ?
+                        `${filteredArticles.filter(article => article.read).length} marked as ${plugin.settings.readPropertyName} out of ${filteredArticles.length} total clippings` :
                         `${filteredArticles.length} total clippings found`
                   }
                 >
-                  ({showOnlyCompleted ? 
+                  ({showOnlyCompleted ?
                     <span className="cc-inline-flex cc-items-center cc-gap-0.5">
                       {`${filteredArticles.length}/${filteredArticles.length} + ${articles.length - filteredArticles.length}`} <EyeOff className="cc-h-3 cc-w-3" strokeWidth={1.5} />
                     </span> :
-                    hideCompleted ? 
+                    hideCompleted ?
                       <span className="cc-inline-flex cc-items-center cc-gap-0.5">
                         {completedCount} <EyeOff className="cc-h-3 cc-w-3" strokeWidth={1.5} />/{filteredArticles.length}
-                      </span> : 
-                      plugin.settings.readPropertyName ? 
-                        `${filteredArticles.filter(article => article.read).length}/${filteredArticles.length}` : 
+                      </span> :
+                      plugin.settings.readPropertyName ?
+                        `${filteredArticles.filter(article => article.read).length}/${filteredArticles.length}` :
                         filteredArticles.length
                   })
                 </span>
                 {getSortIcon('title')}
               </th>
-              <th 
+              <th
                 onClick={() => handleSort('date')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer cc-whitespace-nowrap clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
                 Date {getSortIcon('date')}
               </th>
-              <th 
+              <th
                 onClick={() => handleSort('path')}
                 className="cc-px-4 cc-py-2 cc-text-left cc-cursor-pointer clipper-catalog-header-cell  cc-narrow-view-hidden"
               >
@@ -774,7 +774,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                   Tags
                   {plugin.settings.includeFrontmatterTags && (
                     <>
-                      <div 
+                      <div
                         className="cc-relative cc-inline-flex cc-items-center"
                         data-tooltip="Frontmatter tags (bordered) appear first, followed by inline content tags (filled)"
                       >
@@ -795,23 +795,23 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 {plugin.settings.readPropertyName && (
                   <td className="cc-px-1.5 cc-py-2" onClick={(e) => e.stopPropagation()}>
                     <span className="cc-flex cc-justify-center cc-items-center cc-gap-2 cc-cursor-pointer cc-min-h-[1.5rem]">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className={plugin.settings.useNativeCheckbox ? 'clipper-catalog-compatible-checkbox' : 'clipper-catalog-checkbox'}
                       checked={article.read === true}
                       onChange={async (e) => {
                         const isChecked = e.target.checked;
                         const file = app.vault.getAbstractFileByPath(article.path);
                         if (!(file instanceof TFile)) return;
-                      
+
                         try {
-                          setArticles(prev => prev.map(a => 
+                          setArticles(prev => prev.map(a =>
                             a.path === article.path ? {...a, read: isChecked} : a
                           ));
-                      
+
                           const metadata = app.metadataCache.getFileCache(file);
                           const content = await app.vault.read(file);
-                      
+
                           if (!metadata?.frontmatter) {
                             const newContent = `---\n${plugin.settings.readPropertyName}: ${isChecked}\n---\n${content}`;
                             await app.vault.modify(file, newContent);
@@ -822,7 +822,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           }
                         } catch (error) {
                           console.error('Error:', error);
-                          setArticles(prev => prev.map(a => 
+                          setArticles(prev => prev.map(a =>
                             a.path === article.path ? {...a, read: !isChecked} : a
                           ));
                         }
@@ -833,7 +833,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                 )}
                 <td className="cc-px-4 cc-py-2">
                   <div className="cc-flex cc-flex-col">
-                    <div 
+                    <div
                       className="cc-flex cc-items-center cc-cursor-pointer cc-gap-2 cc-min-h-[1.5rem]"
                       onClick={(event) => openArticle(article.path, event)}
                       onContextMenu={(event) => {
@@ -847,10 +847,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             .onClick(() => {
                               const file = app.vault.getAbstractFileByPath(article.path);
                               if (!(file instanceof TFile)) return;
-                              
+
                               // Get a new leaf in tab mode
                               const leaf = app.workspace.getLeaf('tab');
-                              
+
                               // Open the file in the new leaf
                               leaf.openFile(file);
                             });
@@ -863,21 +863,21 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             .onClick(async () => {
                               const file = app.vault.getAbstractFileByPath(article.path);
                               if (!(file instanceof TFile)) return;
-                              
+
                               // Store current active leaf
                               const currentLeaf = app.workspace.activeLeaf;
-                              
+
                               // Create and open in new leaf
                               const newLeaf = app.workspace.getLeaf('tab');
                               await newLeaf.openFile(file);
-                              
+
                               // Switch back to the original leaf
                               if (currentLeaf) {
                                 app.workspace.setActiveLeaf(currentLeaf, { focus: true });
                               }
                             });
                         });
-                        
+
                         menu.addItem((item) => {
                           item
                             .setTitle(`Open in new window`)
@@ -885,7 +885,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             .onClick(() => {
                               const file = app.vault.getAbstractFileByPath(article.path);
                               if (!(file instanceof TFile)) return;
-                              
+
                               const leaf = app.workspace.openPopoutLeaf();  // Create the popout window
                               leaf.openFile(file);  // Open the file in the new leaf
                             });
@@ -898,10 +898,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             .onClick(() => {
                               const file = app.vault.getAbstractFileByPath(article.path);
                               if (!(file instanceof TFile)) return;
-                              
+
                               // Get a new leaf in the preferred direction
                               const leaf = app.workspace.getLeaf('split', 'vertical');
-                              
+
                               // Open the file in the new leaf
                               leaf.openFile(file);
                             });
@@ -915,16 +915,16 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                               .onClick(async () => {
                                 const file = app.vault.getAbstractFileByPath(article.path);
                                 if (!(file instanceof TFile)) return;
-                                
+
                                 // Get the hover editor plugin instance
                                 const hoverEditorPlugin = (app as any).plugins.plugins["obsidian-hover-editor"];
-                                
+
                                 // Create new leaf using the plugin's spawnPopover method
                                 const newLeaf = hoverEditorPlugin.spawnPopover();
-                                
+
                                 // Open the file in the new leaf
                                 await newLeaf.openFile(file);
-                                
+
                                 // Optional: Focus the new leaf
                                 app.workspace.setActiveLeaf(newLeaf, { focus: true });
                               });
@@ -932,7 +932,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         }
 
                         menu.addSeparator();
-                        
+
                         menu.addItem((item) => {
                           item
                             .setTitle("Reveal file in navigation")
@@ -941,29 +941,29 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                               // Get the file and ensure it's a TFile
                               const file = app.vault.getAbstractFileByPath(article.path);
                               if (!(file instanceof TFile)) return;
-                        
+
                               // Helper to check if file explorer is open
                               const isFileExplorerOpen = () => {
                                 let isOpen = false;
                                 app.workspace.iterateAllLeaves((leaf) => {
                                   const leafWithContainer = leaf as WorkspaceLeaf & { containerEl: Element };
-                                  if (leaf.getViewState().type === "file-explorer" && 
+                                  if (leaf.getViewState().type === "file-explorer" &&
                                       window.getComputedStyle(leafWithContainer.containerEl, null).display !== "none") {
                                     isOpen = true;
                                   }
                                 });
                                 return isOpen;
                               };
-                        
+
                               // Store current active view
                               const currentView = app.workspace.getActiveViewOfType(ClipperCatalogView);
-                        
+
                               try {
                                 // If file explorer isn't open, open it
                                 if (!isFileExplorerOpen()) {
                                   await (app as any).commands.executeCommandById('file-explorer:open');
                                 }
-                        
+
                                 // Find the file explorer leaf
                                 let explorerLeaf: WorkspaceLeaf | null = null;
                                 app.workspace.iterateAllLeaves((leaf) => {
@@ -971,23 +971,23 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                     explorerLeaf = leaf;
                                   }
                                 });
-                        
+
                                 if (explorerLeaf) {
                                   // Create a background leaf but don't focus it
                                   const backgroundLeaf = app.workspace.getLeaf('tab');
-                                  
+
                                   // Load the file in the background
-                                  await backgroundLeaf.openFile(file, { 
+                                  await backgroundLeaf.openFile(file, {
                                     active: false,
                                     state: { mode: 'source' }
                                   });
-                        
+
                                   // Temporarily activate explorer leaf (needed for reveal)
                                   app.workspace.setActiveLeaf(explorerLeaf, { focus: false });
-                                  
+
                                   // Reveal the file
                                   await (app as any).commands.executeCommandById('file-explorer:reveal-active-file');
-                        
+
                                   // Clean up the background leaf
                                   backgroundLeaf.detach();
                                 }
@@ -1005,8 +1005,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                 }
                               }
                             });
-                        });                        
-                        
+                        });
+
 
                         menu.addItem((item) => {
                           item
@@ -1046,10 +1046,10 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           else if (Array.isArray(url)) {
                             // Filter out empty items
                             const validUrls = url.filter(item => typeof item === 'string' && item.trim() !== '');
-                            
+
                             if (validUrls.length > 0) {
                               menu.addSeparator();
-                              
+
                               // Add a submenu for each URL in the array
                               validUrls.forEach((singleUrl, index) => {
                                 if (typeof singleUrl === 'string' && isValidUrl(singleUrl)) {
@@ -1081,22 +1081,22 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         menu.showAtMouseEvent(event.nativeEvent);
                       }}
                     >
-                      <svg 
-                        className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon" 
-                        fill="none" 
-                        strokeWidth="2" 
-                        viewBox="0 0 24 24" 
+                      <svg
+                        className="cc-h-4 cc-w-4 cc-flex-shrink-0 clipper-catalog-icon"
+                        fill="none"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         <path d="M14 2v6h6" />
                         <path d="M5 9h14" strokeWidth="1" />
                       </svg>
-                      
+
                       {/* Title container - no hover events here */}
                       <div className="cc-flex cc-items-center">
                         {/* The actual hoverable link element */}
-                        <span 
+                        <span
                           className={`clipper-catalog-title-link internal-link markdown-preview-view cc-text-sm ${
                             (plugin.settings.readPropertyName && !article.read) ? 'cc-font-bold' : ''
                           }`}
@@ -1112,7 +1112,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             if (event.metaKey || event.ctrlKey) {
                               // Check if hover editor plugin exists with proper type casting
                               if (!(app as any).plugins?.plugins["obsidian-hover-editor"]) return;
-                      
+
                               const targetFile = app.vault.getAbstractFileByPath(article.path);
                               if (targetFile instanceof TFile) {
                                 app.workspace.trigger('hover-link', {
@@ -1134,11 +1134,11 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           onDragStart={(event) => {
                             const file = app.vault.getAbstractFileByPath(article.path);
                             if (!(file instanceof TFile)) return;
-                            
+
                             // Create clean link format
                             const cleanName = file.basename;
                             const linkText = `[[${cleanName}]]`;
-                            
+
                             // Set data for link creation
                             event.dataTransfer.setData('text/plain', linkText);
                             event.dataTransfer.effectAllowed = 'copy';
@@ -1149,13 +1149,13 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             dragElement.innerHTML = `<div><svg viewBox="0 0 100 100" class="document" width="17" height="17"><path fill="currentColor" stroke="currentColor" d="M14,4v92h72V29.2l-0.6-0.6l-24-24L60.8,4H14z M18,8h40v24h24v60H18V8z M62,10.9L79.1,28H62V10.9z"></path></svg> ${file.basename}</div>`;
                             document.body.appendChild(dragElement);
                             event.dataTransfer.setDragImage(dragElement, 0, 0);
-                            
+
                             setTimeout(() => {
                               document.body.removeChild(dragElement);
                             }, 0);
                           }}
                         >
-                          <ArticleTitle 
+                          <ArticleTitle
                             file={app.vault.getAbstractFileByPath(article.path) as TFile || null}
                             content={article.content || ''}
                             title={article.title}
@@ -1164,7 +1164,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                       </div>
                     </div>
                     {/* "Clipped from" info - no hover events */}
-                    {plugin.settings.showClippedFrom && 
+                    {plugin.settings.showClippedFrom &&
                       // First, extract all domains from valid URLs
                       (() => {
                         const domains = Object.entries(article.urls)
@@ -1180,7 +1180,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             return null;
                           })
                           .filter(Boolean);
-                        
+
                         // Only render if we have valid domains
                         return domains.length > 0 ? (
                           <span className="cc-text-[0.8rem] cc-text-muted cc-ml-6 cc-italic">
@@ -1199,7 +1199,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     onContextMenu={(event) => {
                       event.preventDefault();
                       const menu = new Menu();
-                      
+
                       menu.addItem((item) => {
                         item
                           .setTitle("Copy path")
@@ -1222,7 +1222,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     {article.frontmatterTags?.length > 0 && (
                       <>
                         {article.frontmatterTags.map((tag, i) => (
-                          <span 
+                          <span
                             key={`fm-${i}`}
                             onClick={() => setSearchTerm(`#${tag}`)}
                             className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-frontmatter-tag"
@@ -1236,9 +1236,9 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   .setDisabled(true)
                                   .setIcon("tag")
                               });
-  
+
                               menu.addSeparator();
-  
+
                               menu.addItem((item) => {
                                 item
                                   .setTitle("Search tag")
@@ -1256,7 +1256,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                     navigator.clipboard.writeText(tag);
                                   });
                               });
-      
+
                               // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
                               menu.showAtMouseEvent(event.nativeEvent);
                             }}
@@ -1270,7 +1270,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     {/* Content tags section */}
                     {article.contentTags?.length > 0 && (
                       article.contentTags.map((tag, i) => (
-                        <span 
+                        <span
                           key={`content-${i}`}
                           onClick={() => setSearchTerm(`#${tag}`)}
                           className="cc-px-2 cc-py-1 cc-text-xs cc-rounded-full cc-cursor-pointer cc-transition-colors clipper-catalog-tag"
@@ -1304,7 +1304,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   navigator.clipboard.writeText(`#${tag}`);
                                 });
                             });
-    
+
                             // Convert React MouseEvent to DOM MouseEvent for showAtMouseEvent
                             menu.showAtMouseEvent(event.nativeEvent);
                           }}
@@ -1322,7 +1322,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                     if (typeof urlValue === 'string') {
                       return isValidUrl(urlValue) ? (
                         <div key={propName} className="cc-flex cc-flex-col">
-                          <a 
+                          <a
                             key={propName}
                             href={urlValue}
                             target="_blank"
@@ -1367,7 +1367,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           </a>
                         </div>
                       ) : (
-                        <span 
+                        <span
                           key={propName}
                           className="cc-inline-flex cc-items-center cc-gap-0.5 cc-text-error cc-opacity-50"
                           title="Invalid URL"
@@ -1376,12 +1376,12 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                           <span className="cc-text-xs">{propName}</span>
                         </span>
                       );
-                    } 
+                    }
                     // Handle arrays
                     else if (Array.isArray(urlValue)) {
                       // Filter out empty items from the array
                       const validUrls = urlValue.filter(item => typeof item === 'string' && item.trim() !== '');
-                      
+
                       return (
                         <div key={propName} className="cc-flex cc-flex-col cc-gap-0.5">
                           {validUrls.map((urlItem, urlIndex) => {
@@ -1389,9 +1389,9 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                             if (typeof urlItem === 'string' && isValidUrl(urlItem)) {
                               // Now urlItem is definitely a string
                               const safeUrl = urlItem; // Create a const reference that TS knows is a string
-                              
+
                               return (
-                                <a 
+                                <a
                                   key={`${propName}-${urlIndex}`}
                                   href={safeUrl}
                                   target="_blank"
@@ -1399,7 +1399,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                   onContextMenu={(event: React.MouseEvent<HTMLAnchorElement>) => {
                                     event.preventDefault();
                                     const menu = new Menu();
-                    
+
                                     menu.addItem((item) => {
                                       item
                                         .setTitle(`Open ${propName} ${validUrls.length > 1 ? (urlIndex + 1) : ''} in browser`.trim())
@@ -1408,7 +1408,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                           window.open(safeUrl, '_blank');
                                         });
                                     });
-                    
+
                                     menu.addItem((item) => {
                                       item
                                         .setTitle(`Copy ${propName} ${validUrls.length > 1 ? (urlIndex + 1) : ''} URL`.trim())
@@ -1417,7 +1417,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                                           navigator.clipboard.writeText(safeUrl);
                                         });
                                     });
-                    
+
                                     menu.showAtMouseEvent(event.nativeEvent);
                                   }}
                                   onClick={(e) => {
@@ -1437,7 +1437,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                               );
                             } else {
                               return (
-                                <span 
+                                <span
                                   key={`${propName}-${urlIndex}`}
                                   className="cc-inline-flex cc-items-center cc-gap-0.5 cc-text-error cc-opacity-50"
                                   title="Invalid URL"
@@ -1453,7 +1453,7 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
                         </div>
                       );
                     }
-                                    
+
                       return null;
                     })}
                   </div>
@@ -1463,15 +1463,15 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
           </tbody>
         </table>
       </div>
-  
+
       {filteredArticles.length === 0 && (
         <div className="cc-text-center cc-py-4 cc-flex cc-flex-col cc-gap-2">
           <div className="clipper-catalog-muted">
             No articles found matching your search.
           </div>
           <div className="cc-text-xs cc-text-muted cc-max-w-[400px] cc-text-center cc-mx-auto">
-            Note: This catalog shows any markdown files containing a URL in their frontmatter under the property: "{plugin.settings.sourcePropertyName}". 
-            You can change this property name in <span 
+            Note: This catalog shows any markdown files containing a URL in their frontmatter under the property: "{plugin.settings.sourcePropertyName}".
+            You can change this property name in <span
               className="cc-text-accent cc-underline cc-cursor-pointer hover:cc-opacity-80"
               onClick={() => plugin.openSettings()}
             >

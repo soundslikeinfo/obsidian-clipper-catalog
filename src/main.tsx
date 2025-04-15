@@ -41,7 +41,7 @@ export default class ObsidianClipperCatalog extends Plugin {
     setting.open();
     setting.openTabById('clipper-catalog');
   }
-  
+
   async onload() {
     await this.loadSettings();
 
@@ -52,12 +52,12 @@ export default class ObsidianClipperCatalog extends Plugin {
       <line x1="3" y1="15" x2="21" y2="15" stroke="currentColor" stroke-width="1"/>
       <line x1="7" y1="3" x2="7" y2="21" stroke="currentColor" stroke-width="1"/>
       </svg>`);
-    
+
     this.registerView(
       VIEW_TYPE_CLIPPER_CATALOG,
       (leaf: WorkspaceLeaf) => new ClipperCatalogView(leaf, this)
     );
-  
+
     // Add ribbon icon
     this.addRibbonIcon(ICON_NAME, 'Show all clippings', (evt: MouseEvent) => {
       // Get active leaf or create new one in center
@@ -131,7 +131,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       .then(textComponent => {
         const inputEl = textComponent.inputEl;
         let initialValue = this.plugin.settings.sourcePropertyName;
-      
+
         inputEl.addEventListener('blur', async () => {
           if (inputEl.value !== initialValue) {
             initialValue = inputEl.value; // Update reference
@@ -195,7 +195,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
       text: '⚠️ Warning: The next setting will allow the catalog to overwrite any property you set here. Proceed if you know what you are doing.',
       cls: 'setting-item-description warning-text'
     }).style.color = 'var(--text-warning)';
-    
+
     new Setting(containerEl)
       .setName('Read status property name')
       .setDesc('Leave blank to hide checkboxes. If set, specifies which frontmatter property tracks read status (e.g., "read", "completed"). Note: Changing this affects new changes only and will not erase any values.')
@@ -205,7 +205,7 @@ class ClipperCatalogSettingTab extends PluginSettingTab {
         .then(textComponent => {
           const inputEl = textComponent.inputEl;
           let initialValue = this.plugin.settings.readPropertyName;
-        
+
           inputEl.addEventListener('blur', async () => {
             if (inputEl.value !== initialValue) {
               initialValue = inputEl.value; // Update reference

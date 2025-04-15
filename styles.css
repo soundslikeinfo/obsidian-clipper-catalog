@@ -477,7 +477,7 @@
       max-width: 500px;
       margin-right: 2em;
     }
-    textarea, 
+    textarea,
     input[type="text"],
     select {
       background-color: var(--background-modifier-form-field);
