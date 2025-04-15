@@ -104,8 +104,8 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNarrowView, setIsNarrowView] = useState(false);
-  const [hideCompleted, setHideCompleted] = useState(false);
-  const [showOnlyCompleted, setShowOnlyCompleted] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(plugin.settings.hideCompleted);
+  const [showOnlyCompleted, setShowOnlyCompleted] = useState(plugin.settings.showOnlyCompleted);
   const [advancedSettings, setAdvancedSettings] = useState<AdvancedSettings>({
     ignoredDirectories: plugin.settings.ignoredDirectories,
     isExpanded: plugin.settings.isAdvancedSettingsExpanded
@@ -534,15 +534,25 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
         </div>
         {plugin.settings.readPropertyName && (
           <div className="cc-mt-2 cc-ml-2 cc-flex cc-items-center cc-gap-4">
-            <span
-              onClick={() => {
-                setHideCompleted(!hideCompleted);
-                if (showOnlyCompleted) setShowOnlyCompleted(false);
-              }}
-              className={`cc-inline-flex cc-items-center cc-gap-1 cc-text-sm cc-text-accent hover:cc-underline cc-cursor-pointer internal-link ${
-                hideCompleted ? 'cc-font-bold' : ''
-              }`}
-            >
+	          <span
+	            onClick={() => {
+	              const newHideCompleted = !hideCompleted;
+	              setHideCompleted(newHideCompleted);
+
+	              // Save to settings
+	              plugin.settings.hideCompleted = newHideCompleted;
+	              plugin.saveSettings();
+
+	              if (showOnlyCompleted) {
+	                setShowOnlyCompleted(false);
+	                plugin.settings.showOnlyCompleted = false;
+	                plugin.saveSettings();
+	              }
+	            }}
+	            className={`cc-inline-flex cc-items-center cc-gap-1 cc-text-sm cc-text-accent hover:cc-underline cc-cursor-pointer internal-link ${
+	              hideCompleted ? 'cc-font-bold' : ''
+	            }`}
+	          >
               {hideCompleted ? (
                 <ChevronUp className="cc-h-3.5 cc-w-3.5" />
               ) : (
@@ -557,8 +567,18 @@ const ClipperCatalog: React.FC<ClipperCatalogProps> = ({ app, plugin }) => {
 
             <span
               onClick={() => {
-                setShowOnlyCompleted(!showOnlyCompleted);
-                if (hideCompleted) setHideCompleted(false);
+                const newShowOnlyCompleted = !showOnlyCompleted;
+                setShowOnlyCompleted(newShowOnlyCompleted);
+
+                // Save to settings
+                plugin.settings.showOnlyCompleted = newShowOnlyCompleted;
+                plugin.saveSettings();
+
+                if (hideCompleted) {
+                  setHideCompleted(false);
+                  plugin.settings.hideCompleted = false;
+                  plugin.saveSettings();
+                }
               }}
               className={`cc-inline-flex cc-items-center cc-gap-1 cc-text-sm cc-text-accent hover:cc-underline cc-cursor-pointer internal-link ${
                 showOnlyCompleted ? 'cc-font-bold' : ''

@@ -12,6 +12,8 @@ interface ObsidianClipperCatalogSettings {
   openInSameLeaf: boolean;
   readPropertyName: string;
   useNativeCheckbox: boolean;
+  hideCompleted: boolean;
+  showOnlyCompleted: boolean;
 }
 
 interface ObsidianSettings {
@@ -30,7 +32,9 @@ const DEFAULT_SETTINGS: ObsidianClipperCatalogSettings = {
   includeFrontmatterTags: true,
   openInSameLeaf: false,
   readPropertyName: '',
-  useNativeCheckbox: false
+  useNativeCheckbox: false,
+  hideCompleted: false,
+  showOnlyCompleted: false
 }
 
 export default class ObsidianClipperCatalog extends Plugin {
