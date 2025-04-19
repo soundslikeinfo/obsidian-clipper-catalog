@@ -1,5 +1,8 @@
 ## Changelog
 
+### [1.3.1] - 2025-04-19
+- Preserve hide/show read filters views
+
 ### [1.3.0] - 2025-03-17
 - Introduce draggable titles
 - Support url list property type
